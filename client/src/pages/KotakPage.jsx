@@ -15,10 +15,14 @@ import {
   saveTradingConfig,
   fetchOpenTrades,
   fetchLiveTrade,
+  fetchSchedule,
+  saveSchedule,
+  runScheduleNow,
 } from '../api/trading';
 import KotakConfigForm from '../components/KotakConfigForm';
 import SavedConfigPanel from '../components/SavedConfigPanel';
 import OpenStraddleLive from '../components/OpenStraddleLive';
+import SchedulePanel from '../components/SchedulePanel';
 
 const DEFAULT_TRADING = {
   symbol: 'NIFTY',
@@ -53,9 +57,21 @@ export default function KotakPage() {
   const [quoteLoading, setQuoteLoading] = useState(false);
   const [tradingForm, setTradingForm] = useState(DEFAULT_TRADING);
   const [configSaved, setConfigSaved] = useState(false);
+  const [schedule, setSchedule] = useState(null);
+  const [scheduleStatus, setScheduleStatus] = useState(null);
+  const [scheduleForm, setScheduleForm] = useState({
+    enabled: false,
+    entryTime: '09:15',
+    symbol: 'NIFTY',
+    autoEnter: true,
+    monitorIntervalSec: 30,
+    saveToTracker: true,
+  });
+  const [scheduleSaved, setScheduleSaved] = useState(false);
   const [liveTrade, setLiveTrade] = useState(null);
   const [liveLoading, setLiveLoading] = useState(false);
   const [liveError, setLiveError] = useState(null);
+  const [loadFailed, setLoadFailed] = useState(false);
 
   const refreshLive = useCallback(async () => {
     setLiveLoading(true);
@@ -83,12 +99,16 @@ export default function KotakPage() {
   }, []);
 
   const refresh = useCallback(async () => {
-    const [c, s] = await Promise.all([
+    const [c, s, sch] = await Promise.all([
       fetchTradingConfig(),
       fetchTradingSession(),
+      fetchSchedule(),
     ]);
     setCfg(c);
     setTradingForm({ ...DEFAULT_TRADING, ...c.trading });
+    setSchedule(sch.schedule);
+    setScheduleStatus(sch);
+    setScheduleForm((f) => ({ ...f, ...sch.schedule }));
     setLoggedIn(s.loggedIn);
     if (s.loggedIn) {
       await refreshLive();
@@ -100,7 +120,12 @@ export default function KotakPage() {
   }, [symbol, refreshLive]);
 
   useEffect(() => {
-    refresh().catch((e) => setError(e.message));
+    setLoadFailed(false);
+    refresh()
+      .catch((e) => {
+        setError(e.message);
+        setLoadFailed(true);
+      });
   }, [refresh]);
 
   useEffect(() => {
@@ -177,7 +202,21 @@ export default function KotakPage() {
   };
 
   if (!cfg) {
-    return <div className="kotak-page loading">Loading Kotak…</div>;
+    return (
+      <div className="kotak-page loading">
+        {loadFailed ? (
+          <>
+            <p className="error-banner">
+              Kotak API unavailable. Restart the server and confirm the terminal
+              shows: Kotak trading API: /api/trading
+            </p>
+            {error && <p>{error}</p>}
+          </>
+        ) : (
+          <p>Loading Kotak…</p>
+        )}
+      </div>
+    );
   }
 
   const fmt = (n) => (n != null ? `₹${Number(n).toFixed(2)}` : '—');
@@ -279,6 +318,27 @@ export default function KotakPage() {
             await saveTradingConfig(tradingForm);
             setConfigSaved(true);
             setTimeout(() => setConfigSaved(false), 2500);
+          })
+        }
+      />
+
+      <SchedulePanel
+        schedule={schedule}
+        scheduleStatus={scheduleStatus}
+        scheduleForm={scheduleForm}
+        setScheduleForm={setScheduleForm}
+        busy={busy}
+        saved={scheduleSaved}
+        onSave={() =>
+          run(async () => {
+            await saveSchedule(scheduleForm);
+            setScheduleSaved(true);
+            setTimeout(() => setScheduleSaved(false), 2500);
+          })
+        }
+        onRunNow={() =>
+          run(async () => {
+            await runScheduleNow(true);
           })
         }
       />

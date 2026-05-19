@@ -102,10 +102,11 @@ Open **Kotak Neo** in the app nav (`/kotak`). This is independent of the straddl
 
 1. Set in `server/.env`: `KOTAK_ACCESS_TOKEN`, `KOTAK_MOBILE_NUMBER`, `KOTAK_UCC` (credentials only).
 2. On the Kotak page, edit **Trading config** (side, lots, SL/target, etc.) and click **Save config** — stored in `server/data/kotak-trading-config.json`.
-3. **Login TOTP** → **Validate MPIN**.
-4. Optionally **Use tracker 9:15 anchor** for strike and entry premium, then **Enter straddle**.
-5. **Live quote** (NIFTY & SENSEX): Kotak LTP for CE + PE at strike — auto-refreshes every 30s when logged in.
-6. **Check SL / target** uses Kotak live premium when available (falls back to NSE/BSE if quotes fail).
+3. Set **Scheduled entry** time (IST), enable it, and save — at that time the app captures spot → ATM strike → premium; optional auto-enter on Kotak.
+4. **Login TOTP** → **Validate MPIN** (required for auto-enter and Kotak live quotes).
+5. Optionally **Use tracker 9:15 anchor** or manual **Enter straddle**.
+6. Open trades are monitored every 15–60s (configurable, default 30s) for SL/target when Kotak is logged in.
+7. **Live quote** panel refreshes while a trade is open.
 
 See [Kotak Neo API v2](https://1q09.github.io/Kotak-neo-api-v2/?theme=light#login-with-totp).
 

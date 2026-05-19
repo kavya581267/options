@@ -3,6 +3,7 @@ import cors from 'cors';
 import { config } from './config.js';
 import { loadTradingConfig } from './trading/tradingConfig.js';
 import { startScheduler } from './scheduler.js';
+import { startKotakScheduler } from './kotakScheduler.js';
 import apiRouter from './routes/api.js';
 
 await loadTradingConfig();
@@ -26,6 +27,9 @@ const server = app.listen(config.port, () => {
   console.log(`Data directory: ${config.dataDir}`);
   console.log(`Tracking: ${config.symbols.join(', ')}`);
   startScheduler();
+  startKotakScheduler().catch((err) => {
+    console.warn('[kotak-scheduler] failed to start:', err.message);
+  });
 });
 
 server.on('error', (err) => {

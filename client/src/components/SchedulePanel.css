@@ -1,0 +1,23 @@
+.schedule-panel .schedule-enable {
+  margin-bottom: 0.75rem;
+}
+
+.schedule-status {
+  display: flex;
+  gap: 1rem;
+  margin-top: 0.75rem;
+  font-size: 0.9rem;
+}
+
+.schedule-status .muted {
+  color: var(--muted);
+}
+
+.schedule-snapshot {
+  margin-top: 0.75rem;
+}
+
+.btn-secondary-schedule {
+  background: var(--surface-2) !important;
+  color: var(--text) !important;
+}

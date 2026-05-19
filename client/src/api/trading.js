@@ -6,6 +6,34 @@ export async function fetchTradingConfig() {
   return res.json();
 }
 
+export async function fetchSchedule() {
+  const res = await fetch(`${BASE}/schedule`);
+  if (!res.ok) throw new Error('Failed to load schedule');
+  return res.json();
+}
+
+export async function saveSchedule(schedule) {
+  const res = await fetch(`${BASE}/schedule`, {
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(schedule),
+  });
+  const data = await res.json();
+  if (!res.ok) throw new Error(data.error || 'Save schedule failed');
+  return data;
+}
+
+export async function runScheduleNow(force = true) {
+  const res = await fetch(`${BASE}/schedule/run-now`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ force }),
+  });
+  const data = await res.json();
+  if (!res.ok) throw new Error(data.error || 'Run failed');
+  return data;
+}
+
 export async function saveTradingConfig(trading) {
   const res = await fetch(`${BASE}/config`, {
     method: 'PUT',

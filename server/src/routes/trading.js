@@ -11,6 +11,17 @@ import { readTrade, listOpenTrades } from '../trading/tradeStorage.js';
 import { hasSavedConfigFile } from '../trading/tradingConfig.js';
 import { getOpenTradeLive } from '../trading/liveStatus.js';
 import {
+  getSchedule,
+  loadSchedule,
+  updateSchedule,
+} from '../trading/scheduleStorage.js';
+import { runScheduledEntry } from '../trading/scheduledEntry.js';
+import {
+  isWeekday,
+  isWithinMarketHours,
+  getISTDateString,
+} from '../marketHours.js';
+import {
   enterStraddle,
   exitStraddle,
   monitorOpenTrade,
@@ -19,9 +30,38 @@ import { computeExitLevels } from '../trading/slTarget.js';
 import { updateTradingConfig } from '../trading/tradingConfig.js';
 import { fetchStraddleQuote } from '../kotak/quotes.js';
 import { getAnchor } from '../storage.js';
-import { getISTDateString } from '../marketHours.js';
 
 const router = Router();
+
+router.get('/schedule', async (_req, res) => {
+  await loadSchedule();
+  const schedule = getSchedule();
+  res.json({
+    schedule,
+    executedToday: schedule.lastExecutedDate === getISTDateString(),
+    marketOpen: isWithinMarketHours(),
+    weekday: isWeekday(),
+    loggedIn: isLoggedIn(),
+  });
+});
+
+router.put('/schedule', async (req, res) => {
+  try {
+    const schedule = await updateSchedule(req.body);
+    res.json({ success: true, schedule });
+  } catch (err) {
+    res.status(400).json({ error: err.message });
+  }
+});
+
+router.post('/schedule/run-now', async (req, res) => {
+  try {
+    const result = await runScheduledEntry({ force: req.body?.force === true });
+    res.json(result);
+  } catch (err) {
+    res.status(400).json({ error: err.message });
+  }
+});
 
 router.get('/config', async (_req, res) => {
   res.json({

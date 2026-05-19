@@ -78,6 +78,12 @@ export function shouldCaptureAnchor(date = new Date()) {
   return isAnchorMinute(date) || canCaptureLateAnchor(date);
 }
 
+export function isTimeMinute(hhmm, date = new Date()) {
+  const p = getISTParts(date);
+  const t = parseTime(hhmm);
+  return p.hour === t.hours && p.minute === t.minutes;
+}
+
 export function formatISTTime(date = new Date()) {
   return new Intl.DateTimeFormat('en-IN', {
     timeZone: config.timezone,
