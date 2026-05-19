@@ -1,8 +1,11 @@
 import express from 'express';
 import cors from 'cors';
 import { config } from './config.js';
+import { loadTradingConfig } from './trading/tradingConfig.js';
 import { startScheduler } from './scheduler.js';
 import apiRouter from './routes/api.js';
+
+await loadTradingConfig();
 
 const app = express();
 

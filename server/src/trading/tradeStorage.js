@@ -33,3 +33,16 @@ export async function clearTrade(symbol) {
     if (err.code !== 'ENOENT') throw err;
   }
 }
+
+const TRACKED_SYMBOLS = ['NIFTY', 'SENSEX'];
+
+export async function listOpenTrades() {
+  const open = [];
+  for (const symbol of TRACKED_SYMBOLS) {
+    const trade = await readTrade(symbol);
+    if (trade?.status === 'open') {
+      open.push({ symbol, trade });
+    }
+  }
+  return open;
+}

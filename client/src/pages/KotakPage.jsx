@@ -12,7 +12,26 @@ import {
   tradingExit,
   tradingMonitor,
   fetchStraddleQuote,
+  saveTradingConfig,
+  fetchOpenTrades,
+  fetchLiveTrade,
 } from '../api/trading';
+import KotakConfigForm from '../components/KotakConfigForm';
+import SavedConfigPanel from '../components/SavedConfigPanel';
+import OpenStraddleLive from '../components/OpenStraddleLive';
+
+const DEFAULT_TRADING = {
+  symbol: 'NIFTY',
+  side: 'SELL',
+  lots: 1,
+  product: 'MIS',
+  useBracketOrder: false,
+  slType: 'percent',
+  slValue: 20,
+  targetType: 'percent',
+  targetValue: 30,
+};
+
 import './KotakPage.css';
 
 const SYMBOLS = ['NIFTY', 'SENSEX'];
@@ -32,17 +51,53 @@ export default function KotakPage() {
   const [monitorMsg, setMonitorMsg] = useState(null);
   const [liveQuote, setLiveQuote] = useState(null);
   const [quoteLoading, setQuoteLoading] = useState(false);
+  const [tradingForm, setTradingForm] = useState(DEFAULT_TRADING);
+  const [configSaved, setConfigSaved] = useState(false);
+  const [liveTrade, setLiveTrade] = useState(null);
+  const [liveLoading, setLiveLoading] = useState(false);
+  const [liveError, setLiveError] = useState(null);
+
+  const refreshLive = useCallback(async () => {
+    setLiveLoading(true);
+    try {
+      const { open } = await fetchOpenTrades();
+      if (!open.length) {
+        setLiveTrade(null);
+        setLiveError(null);
+        return;
+      }
+      const { symbol: sym, trade: t } = open[0];
+      setTrade(t);
+      setSymbol(sym);
+      setStrike(String(t.strike));
+      setEntryPremium(String(t.entryPremium ?? ''));
+      const live = await fetchLiveTrade(sym);
+      setLiveTrade(live);
+      setLiveError(null);
+      if (live.open && live.quote) setLiveQuote(live.quote);
+    } catch (e) {
+      setLiveError(e.message);
+    } finally {
+      setLiveLoading(false);
+    }
+  }, []);
 
   const refresh = useCallback(async () => {
-    const [c, s, t] = await Promise.all([
+    const [c, s] = await Promise.all([
       fetchTradingConfig(),
       fetchTradingSession(),
-      fetchTradeStatus(symbol),
     ]);
     setCfg(c);
+    setTradingForm({ ...DEFAULT_TRADING, ...c.trading });
     setLoggedIn(s.loggedIn);
-    setTrade(t.trade);
-  }, [symbol]);
+    if (s.loggedIn) {
+      await refreshLive();
+    } else {
+      const t = await fetchTradeStatus(symbol);
+      setTrade(t.trade);
+      setLiveTrade(null);
+    }
+  }, [symbol, refreshLive]);
 
   useEffect(() => {
     refresh().catch((e) => setError(e.message));
@@ -87,6 +142,7 @@ export default function KotakPage() {
   }, [loggedIn, symbol, strike]);
 
   useEffect(() => {
+    if (trade?.status === 'open') return;
     if (!loggedIn || !strike) {
       setLiveQuote(null);
       return;
@@ -94,7 +150,13 @@ export default function KotakPage() {
     refreshQuote();
     const id = setInterval(refreshQuote, 30_000);
     return () => clearInterval(id);
-  }, [loggedIn, symbol, strike, refreshQuote]);
+  }, [loggedIn, symbol, strike, refreshQuote, trade?.status]);
+
+  useEffect(() => {
+    if (!loggedIn || trade?.status !== 'open') return;
+    const id = setInterval(refreshLive, 15_000);
+    return () => clearInterval(id);
+  }, [loggedIn, trade?.status, refreshLive]);
 
   const loadTrackerAnchor = async () => {
     setBusy(true);
@@ -196,39 +258,30 @@ export default function KotakPage() {
         )}
       </section>
 
-      <section className="kotak-section">
-        <h2 className="section-title">Config</h2>
-        <div className="kotak-grid">
-          <div className="kotak-card">
-            <span className="label">Side</span>
-            <span>{cfg.trading.side} straddle</span>
-          </div>
-          <div className="kotak-card">
-            <span className="label">Lots</span>
-            <span>{cfg.trading.lots}</span>
-          </div>
-          <div className="kotak-card">
-            <span className="label">Product</span>
-            <span>{cfg.trading.product}</span>
-          </div>
-          <div className="kotak-card">
-            <span className="label">Stop loss</span>
-            <span>
-              {cfg.trading.slType === 'percent'
-                ? `${cfg.trading.slValue}%`
-                : `₹${cfg.trading.slValue}`}
-            </span>
-          </div>
-          <div className="kotak-card">
-            <span className="label">Target</span>
-            <span>
-              {cfg.trading.targetType === 'percent'
-                ? `${cfg.trading.targetValue}%`
-                : `₹${cfg.trading.targetValue}`}
-            </span>
-          </div>
-        </div>
-      </section>
+      <SavedConfigPanel
+        trading={cfg.trading}
+        configSource={cfg.configSource}
+      />
+
+      <OpenStraddleLive
+        live={liveTrade}
+        loading={liveLoading}
+        error={liveError}
+      />
+
+      <KotakConfigForm
+        tradingForm={tradingForm}
+        setTradingForm={setTradingForm}
+        busy={busy}
+        configSaved={configSaved}
+        onSave={() =>
+          run(async () => {
+            await saveTradingConfig(tradingForm);
+            setConfigSaved(true);
+            setTimeout(() => setConfigSaved(false), 2500);
+          })
+        }
+      />
 
       <section className="kotak-section">
         <h2 className="section-title">Trade</h2>
@@ -334,7 +387,7 @@ export default function KotakPage() {
               run(async () => {
                 const r = await tradingMonitor(
                   symbol,
-                  liveQuote?.straddlePremium
+                  liveTrade?.metrics?.currentPremium ?? liveQuote?.straddlePremium
                 );
                 if (r.hit) setMonitorMsg(`Exited: ${r.hit} @ ${fmt(r.currentPremium)}`);
                 else setMonitorMsg(`Premium ${fmt(r.currentPremium)} — no exit`);
@@ -345,17 +398,6 @@ export default function KotakPage() {
           </button>
         </div>
 
-        {trade?.status === 'open' && (
-          <div className="kotak-card open-trade">
-            <p>
-              Open {trade.side} @ strike {trade.strike}, entry{' '}
-              {fmt(trade.entryPremium)}
-            </p>
-            <p className="mono">
-              CE order {trade.orders?.ce} · PE order {trade.orders?.pe}
-            </p>
-          </div>
-        )}
         {monitorMsg && <p className="monitor-msg">{monitorMsg}</p>}
       </section>
 

@@ -1,0 +1,9 @@
+.saved-config-panel .config-source {
+  font-size: 0.85rem;
+  color: var(--muted);
+  margin-bottom: 0.75rem;
+}
+
+.saved-config-panel .config-source strong {
+  color: var(--text);
+}

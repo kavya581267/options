@@ -6,6 +6,17 @@ export async function fetchTradingConfig() {
   return res.json();
 }
 
+export async function saveTradingConfig(trading) {
+  const res = await fetch(`${BASE}/config`, {
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(trading),
+  });
+  const data = await res.json();
+  if (!res.ok) throw new Error(data.error || 'Save config failed');
+  return data;
+}
+
 export async function fetchTradingSession() {
   const res = await fetch(`${BASE}/session`);
   if (!res.ok) throw new Error('Trading API unavailable');
@@ -56,6 +67,19 @@ export async function kotakLogout() {
 export async function fetchTradeStatus(symbol) {
   const res = await fetch(`${BASE}/trade/${symbol}`);
   return res.json();
+}
+
+export async function fetchOpenTrades() {
+  const res = await fetch(`${BASE}/trades/open`);
+  if (!res.ok) throw new Error('Failed to load open trades');
+  return res.json();
+}
+
+export async function fetchLiveTrade(symbol) {
+  const res = await fetch(`${BASE}/live/${symbol}`);
+  const data = await res.json();
+  if (!res.ok) throw new Error(data.error || 'Live status failed');
+  return data;
 }
 
 export async function previewLevels(premium) {

@@ -7,25 +7,57 @@ import {
   loginTotp,
   validateMpin,
 } from '../kotak/client.js';
-import { readTrade } from '../trading/tradeStorage.js';
+import { readTrade, listOpenTrades } from '../trading/tradeStorage.js';
+import { hasSavedConfigFile } from '../trading/tradingConfig.js';
+import { getOpenTradeLive } from '../trading/liveStatus.js';
 import {
   enterStraddle,
   exitStraddle,
   monitorOpenTrade,
 } from '../trading/straddleExecutor.js';
 import { computeExitLevels } from '../trading/slTarget.js';
+import { updateTradingConfig } from '../trading/tradingConfig.js';
 import { fetchStraddleQuote } from '../kotak/quotes.js';
 import { getAnchor } from '../storage.js';
 import { getISTDateString } from '../marketHours.js';
 
 const router = Router();
 
-router.get('/config', (_req, res) => {
+router.get('/config', async (_req, res) => {
   res.json({
-    trading: config.trading,
+    trading: { ...config.trading },
+    configSource: (await hasSavedConfigFile()) ? 'file' : 'env',
     kotakConfigured: Boolean(config.kotak.accessToken),
     loggedIn: isLoggedIn(),
   });
+});
+
+router.get('/trades/open', async (_req, res) => {
+  const open = await listOpenTrades();
+  res.json({ open });
+});
+
+router.get('/live/:symbol', async (req, res) => {
+  try {
+    const symbol = req.params.symbol.toUpperCase();
+    const trade = await readTrade(symbol);
+    if (!trade || trade.status !== 'open') {
+      return res.json({ open: false, symbol });
+    }
+    const live = await getOpenTradeLive(trade, symbol);
+    res.json({ open: true, ...live });
+  } catch (err) {
+    res.status(400).json({ error: err.message });
+  }
+});
+
+router.put('/config', async (req, res) => {
+  try {
+    const trading = await updateTradingConfig(req.body);
+    res.json({ success: true, trading });
+  } catch (err) {
+    res.status(400).json({ error: err.message });
+  }
 });
 
 router.get('/session', async (_req, res) => {

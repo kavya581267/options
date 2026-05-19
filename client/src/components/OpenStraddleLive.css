@@ -1,0 +1,74 @@
+.open-straddle-live {
+  border-color: var(--green);
+  box-shadow: 0 0 0 1px #22c55e33;
+}
+
+.live-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  margin-bottom: 0.5rem;
+}
+
+.live-header .section-title {
+  margin-bottom: 0;
+}
+
+.live-badge {
+  font-size: 0.7rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  padding: 0.25rem 0.6rem;
+  border-radius: 999px;
+  background: #22c55e22;
+  color: var(--green);
+  border: 1px solid #22c55e44;
+}
+
+.live-meta {
+  font-size: 0.85rem;
+  color: var(--muted);
+  margin-bottom: 0.75rem;
+}
+
+.live-updating {
+  font-size: 0.8rem;
+  color: var(--accent);
+  margin-bottom: 0.35rem;
+}
+
+.live-error {
+  font-size: 0.85rem;
+  color: var(--red);
+  margin-bottom: 0.35rem;
+}
+
+.open-straddle-live .kotak-card small {
+  font-size: 0.75rem;
+  color: var(--muted);
+  margin-top: 0.15rem;
+}
+
+.pnl-profit span:last-child {
+  color: var(--green);
+}
+
+.pnl-loss span:last-child {
+  color: var(--red);
+}
+
+.sl-card {
+  border-color: #ef444444;
+}
+
+.target-card {
+  border-color: #3b82f644;
+}
+
+.order-ids {
+  margin-top: 0.75rem;
+  font-size: 0.8rem;
+  color: var(--muted);
+  line-height: 1.5;
+}
