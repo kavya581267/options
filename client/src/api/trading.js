@@ -12,6 +12,15 @@ export async function fetchTradingSession() {
   return res.json();
 }
 
+export async function fetchStraddleQuote(symbol, strike) {
+  const res = await fetch(
+    `${BASE}/quotes/straddle?symbol=${encodeURIComponent(symbol)}&strike=${strike}`
+  );
+  const data = await res.json();
+  if (!res.ok) throw new Error(data.error || 'Quote fetch failed');
+  return data;
+}
+
 export async function fetchTrackerAnchor(symbol) {
   const res = await fetch(`${BASE}/anchor/${symbol}`);
   if (!res.ok) throw new Error(await res.text());
@@ -76,11 +85,11 @@ export async function tradingExit(symbol) {
   return data;
 }
 
-export async function tradingMonitor(symbol) {
+export async function tradingMonitor(symbol, currentPremium) {
   const res = await fetch(`${BASE}/monitor`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ symbol }),
+    body: JSON.stringify({ symbol, currentPremium }),
   });
   const data = await res.json();
   if (!res.ok) throw new Error(data.error || 'Monitor failed');

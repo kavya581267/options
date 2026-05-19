@@ -14,6 +14,7 @@ import {
   monitorOpenTrade,
 } from '../trading/straddleExecutor.js';
 import { computeExitLevels } from '../trading/slTarget.js';
+import { fetchStraddleQuote } from '../kotak/quotes.js';
 import { getAnchor } from '../storage.js';
 import { getISTDateString } from '../marketHours.js';
 
@@ -66,6 +67,23 @@ router.get('/anchor/:symbol', async (req, res) => {
   const symbol = req.params.symbol.toUpperCase();
   const anchor = await getAnchor(symbol);
   res.json({ symbol, date: getISTDateString(), anchor });
+});
+
+router.get('/quotes/straddle', async (req, res) => {
+  try {
+    const symbol = (req.query.symbol || config.trading.symbol).toUpperCase();
+    const strike = Number(req.query.strike);
+    if (!strike || Number.isNaN(strike)) {
+      return res.status(400).json({ error: 'strike query required' });
+    }
+    if (!['NIFTY', 'SENSEX'].includes(symbol)) {
+      return res.status(400).json({ error: 'Only NIFTY and SENSEX supported' });
+    }
+    const quote = await fetchStraddleQuote(symbol, strike);
+    res.json(quote);
+  } catch (err) {
+    res.status(400).json({ error: err.message });
+  }
 });
 
 router.get('/levels/preview', (req, res) => {

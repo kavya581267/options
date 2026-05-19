@@ -5,7 +5,21 @@ import { placeOrder, cancelOrder } from '../kotak/orders.js';
 import { computeExitLevels, checkExit } from './slTarget.js';
 import { readTrade, writeTrade, clearTrade } from './tradeStorage.js';
 import { fetchStraddleAtStrike } from '../fetcher.js';
+import { fetchStraddleQuote } from '../kotak/quotes.js';
 import { getAnchor } from '../storage.js';
+
+async function liveStraddlePremium(symbol, strike) {
+  if (isLoggedIn()) {
+    try {
+      const q = await fetchStraddleQuote(symbol, strike);
+      return q.straddlePremium;
+    } catch (err) {
+      console.warn(`[kotak] quotes failed for ${symbol}, using NSE/BSE:`, err.message);
+    }
+  }
+  const live = await fetchStraddleAtStrike(symbol, strike);
+  return live.straddlePremium;
+}
 
 function txnType(side, leg) {
   const sell = side === 'SELL';
@@ -43,7 +57,8 @@ export async function enterStraddle({ symbol, strike, entryPremium }) {
   const side = config.trading.side;
   const useBo =
     config.trading.useBracketOrder && config.trading.product === 'BO';
-  const entry = premium ?? (await fetchStraddleAtStrike(sym, resolvedStrike)).straddlePremium;
+  const entry =
+    premium ?? (await liveStraddlePremium(sym, resolvedStrike));
   const levels = computeExitLevels(entry, side, config.trading);
 
   const orderOpts = (leg, boExtra = {}) => ({
@@ -148,8 +163,7 @@ export async function monitorOpenTrade(symbol, currentPremium) {
 
   let premium = currentPremium;
   if (premium == null) {
-    const live = await fetchStraddleAtStrike(sym, trade.strike);
-    premium = live.straddlePremium;
+    premium = await liveStraddlePremium(sym, trade.strike);
   }
 
   const hit = checkExit(premium, trade.levels, trade.side);

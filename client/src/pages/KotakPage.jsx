@@ -11,6 +11,7 @@ import {
   tradingEnter,
   tradingExit,
   tradingMonitor,
+  fetchStraddleQuote,
 } from '../api/trading';
 import './KotakPage.css';
 
@@ -29,6 +30,8 @@ export default function KotakPage() {
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState(null);
   const [monitorMsg, setMonitorMsg] = useState(null);
+  const [liveQuote, setLiveQuote] = useState(null);
+  const [quoteLoading, setQuoteLoading] = useState(false);
 
   const refresh = useCallback(async () => {
     const [c, s, t] = await Promise.all([
@@ -67,6 +70,31 @@ export default function KotakPage() {
       setBusy(false);
     }
   };
+
+  const refreshQuote = useCallback(async () => {
+    if (!loggedIn || !strike) return;
+    setQuoteLoading(true);
+    try {
+      const q = await fetchStraddleQuote(symbol, Number(strike));
+      setLiveQuote(q);
+      setEntryPremium(String(q.straddlePremium.toFixed(2)));
+    } catch (e) {
+      setLiveQuote(null);
+      setError(e.message);
+    } finally {
+      setQuoteLoading(false);
+    }
+  }, [loggedIn, symbol, strike]);
+
+  useEffect(() => {
+    if (!loggedIn || !strike) {
+      setLiveQuote(null);
+      return;
+    }
+    refreshQuote();
+    const id = setInterval(refreshQuote, 30_000);
+    return () => clearInterval(id);
+  }, [loggedIn, symbol, strike, refreshQuote]);
 
   const loadTrackerAnchor = async () => {
     setBusy(true);
@@ -237,7 +265,36 @@ export default function KotakPage() {
           <button type="button" disabled={busy} onClick={loadTrackerAnchor}>
             Use tracker 9:15 anchor
           </button>
+          <button
+            type="button"
+            className="btn-quote"
+            disabled={busy || quoteLoading || !loggedIn || !strike}
+            onClick={refreshQuote}
+          >
+            {quoteLoading ? 'Fetching…' : 'Refresh Kotak quote'}
+          </button>
         </div>
+
+        {liveQuote && (
+          <div className="live-quote kotak-grid">
+            <div className="kotak-card">
+              <span className="label">Spot (Kotak)</span>
+              <span>{fmt(liveQuote.spot)}</span>
+            </div>
+            <div className="kotak-card">
+              <span className="label">CE {liveQuote.ceSymbol}</span>
+              <span>{fmt(liveQuote.cePremium)}</span>
+            </div>
+            <div className="kotak-card">
+              <span className="label">PE {liveQuote.peSymbol}</span>
+              <span>{fmt(liveQuote.pePremium)}</span>
+            </div>
+            <div className="kotak-card highlight">
+              <span className="label">Straddle</span>
+              <span>{fmt(liveQuote.straddlePremium)}</span>
+            </div>
+          </div>
+        )}
 
         {levels && (
           <div className="levels-preview">
@@ -275,7 +332,10 @@ export default function KotakPage() {
             disabled={busy || trade?.status !== 'open'}
             onClick={() =>
               run(async () => {
-                const r = await tradingMonitor(symbol);
+                const r = await tradingMonitor(
+                  symbol,
+                  liveQuote?.straddlePremium
+                );
                 if (r.hit) setMonitorMsg(`Exited: ${r.hit} @ ${fmt(r.currentPremium)}`);
                 else setMonitorMsg(`Premium ${fmt(r.currentPremium)} — no exit`);
               })

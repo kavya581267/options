@@ -153,3 +153,22 @@
   color: var(--accent);
   font-size: 0.9rem;
 }
+
+.live-quote {
+  margin: 0.75rem 0;
+}
+
+.kotak-card.highlight {
+  border-color: var(--accent);
+}
+
+.kotak-card.highlight span:last-child {
+  color: var(--accent);
+  font-weight: 700;
+  font-size: 1.05rem;
+}
+
+.btn-quote {
+  background: var(--surface-2) !important;
+  color: var(--text) !important;
+}
