@@ -21,7 +21,7 @@ import {
 } from '../api/trading';
 import KotakConfigForm from '../components/KotakConfigForm';
 import SavedConfigPanel from '../components/SavedConfigPanel';
-import OpenStraddleLive from '../components/OpenStraddleLive';
+import LiveQuotePanel from '../components/LiveQuotePanel';
 import SchedulePanel from '../components/SchedulePanel';
 
 const DEFAULT_TRADING = {
@@ -167,11 +167,8 @@ export default function KotakPage() {
   }, [loggedIn, symbol, strike]);
 
   useEffect(() => {
+    if (!loggedIn || !strike) return;
     if (trade?.status === 'open') return;
-    if (!loggedIn || !strike) {
-      setLiveQuote(null);
-      return;
-    }
     refreshQuote();
     const id = setInterval(refreshQuote, 30_000);
     return () => clearInterval(id);
@@ -297,15 +294,22 @@ export default function KotakPage() {
         )}
       </section>
 
+      <LiveQuotePanel
+        loggedIn={loggedIn}
+        strike={strike}
+        quote={liveTrade?.open ? liveTrade.quote : liveQuote}
+        metrics={liveTrade?.open ? liveTrade.metrics : null}
+        trade={trade?.status === 'open' ? trade : null}
+        levels={trade?.status !== 'open' && levels ? levels : null}
+        loading={quoteLoading || liveLoading}
+        error={liveError || null}
+        onRefresh={refreshQuote}
+        refreshDisabled={busy || quoteLoading || liveLoading || !loggedIn || !strike}
+      />
+
       <SavedConfigPanel
         trading={cfg.trading}
         configSource={cfg.configSource}
-      />
-
-      <OpenStraddleLive
-        live={liveTrade}
-        loading={liveLoading}
-        error={liveError}
       />
 
       <KotakConfigForm
@@ -378,44 +382,7 @@ export default function KotakPage() {
           <button type="button" disabled={busy} onClick={loadTrackerAnchor}>
             Use tracker 9:15 anchor
           </button>
-          <button
-            type="button"
-            className="btn-quote"
-            disabled={busy || quoteLoading || !loggedIn || !strike}
-            onClick={refreshQuote}
-          >
-            {quoteLoading ? 'Fetching…' : 'Refresh Kotak quote'}
-          </button>
         </div>
-
-        {liveQuote && (
-          <div className="live-quote kotak-grid">
-            <div className="kotak-card">
-              <span className="label">Spot (Kotak)</span>
-              <span>{fmt(liveQuote.spot)}</span>
-            </div>
-            <div className="kotak-card">
-              <span className="label">CE {liveQuote.ceSymbol}</span>
-              <span>{fmt(liveQuote.cePremium)}</span>
-            </div>
-            <div className="kotak-card">
-              <span className="label">PE {liveQuote.peSymbol}</span>
-              <span>{fmt(liveQuote.pePremium)}</span>
-            </div>
-            <div className="kotak-card highlight">
-              <span className="label">Straddle</span>
-              <span>{fmt(liveQuote.straddlePremium)}</span>
-            </div>
-          </div>
-        )}
-
-        {levels && (
-          <div className="levels-preview">
-            <span>SL {fmt(levels.stopLoss)}</span>
-            <span>Entry {fmt(levels.entryPremium)}</span>
-            <span>Target {fmt(levels.target)}</span>
-          </div>
-        )}
 
         <div className="kotak-row actions">
           <button

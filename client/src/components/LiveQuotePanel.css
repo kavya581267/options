@@ -1,0 +1,90 @@
+.live-quote-panel {
+  border-color: var(--border);
+}
+
+.live-quote-panel .live-hint {
+  font-size: 0.85rem;
+  color: var(--muted);
+  margin-bottom: 0.75rem;
+}
+
+.live-quote-panel .live-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  margin-bottom: 0.35rem;
+}
+
+.live-quote-panel .live-header .section-title {
+  margin-bottom: 0;
+}
+
+.live-status-badge {
+  font-size: 0.65rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  padding: 0.25rem 0.6rem;
+  border-radius: 999px;
+  background: var(--surface-2);
+  color: var(--muted);
+  border: 1px solid var(--border);
+}
+
+.live-status-badge.running {
+  background: #22c55e22;
+  color: var(--green);
+  border-color: #22c55e44;
+}
+
+.live-status-badge.loading {
+  background: #3b82f622;
+  color: var(--accent);
+  border-color: #3b82f644;
+}
+
+.placeholder-card .value.placeholder {
+  color: var(--muted);
+  opacity: 0.5;
+  font-style: italic;
+}
+
+.placeholder-card small.hint {
+  font-size: 0.75rem;
+  color: var(--muted);
+  margin-top: 0.2rem;
+}
+
+.live-quote-panel .kotak-card .value {
+  font-weight: 600;
+}
+
+.live-quote-actions {
+  margin-top: 0.75rem;
+  align-items: center;
+}
+
+.live-quote-actions .muted {
+  font-size: 0.8rem;
+  color: var(--muted);
+}
+
+.live-quote-panel .live-meta {
+  font-size: 0.85rem;
+  color: var(--muted);
+  margin-bottom: 0.5rem;
+}
+
+.live-quote-panel .live-error {
+  color: var(--red);
+  font-size: 0.85rem;
+  margin-bottom: 0.5rem;
+}
+
+.live-quote-panel .pnl-profit .value {
+  color: var(--green);
+}
+
+.live-quote-panel .pnl-loss .value {
+  color: var(--red);
+}
