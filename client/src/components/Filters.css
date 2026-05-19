@@ -41,3 +41,44 @@
   border-color: var(--accent);
   box-shadow: 0 0 0 2px var(--accent-dim);
 }
+
+.date-filter {
+  min-width: 200px;
+}
+
+.date-nav {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+}
+
+.date-nav input[type='date'] {
+  flex: 1;
+  min-width: 0;
+}
+
+.date-arrow {
+  flex-shrink: 0;
+  font-family: inherit;
+  font-size: 1rem;
+  line-height: 1;
+  width: 2.25rem;
+  height: 2.25rem;
+  padding: 0;
+  border-radius: 8px;
+  border: 1px solid var(--border);
+  background: var(--surface-2);
+  color: var(--text);
+  cursor: pointer;
+  transition: background 0.15s, border-color 0.15s;
+}
+
+.date-arrow:hover:not(:disabled) {
+  background: var(--surface);
+  border-color: var(--accent);
+}
+
+.date-arrow:disabled {
+  opacity: 0.35;
+  cursor: not-allowed;
+}
