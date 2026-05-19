@@ -10,6 +10,14 @@ app.use(cors());
 app.use(express.json());
 app.use('/api', apiRouter);
 
+try {
+  const { default: tradingRouter } = await import('./routes/trading.js');
+  app.use('/api/trading', tradingRouter);
+  console.log('Kotak trading API: /api/trading');
+} catch (err) {
+  console.warn('[kotak] routes not loaded:', err.message);
+}
+
 const server = app.listen(config.port, () => {
   console.log(`Server running on http://localhost:${config.port}`);
   console.log(`Data directory: ${config.dataDir}`);

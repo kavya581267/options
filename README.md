@@ -96,6 +96,17 @@ Or click **Fetch now** in the UI (requires `FORCE_FETCH=true` when market is clo
 }
 ```
 
+## Kotak Neo (separate page)
+
+Open **Kotak Neo** in the app nav (`/kotak`). This is independent of the straddle tracker chart.
+
+1. Set in `server/.env`: `KOTAK_ACCESS_TOKEN`, `KOTAK_MOBILE_NUMBER`, `KOTAK_UCC`, plus `TRADING_*` / `SL_*` / `TARGET_*`.
+2. On the Kotak page: **Login TOTP** → **Validate MPIN**.
+3. Optionally **Use tracker 9:15 anchor** for strike and entry premium, then **Enter straddle**.
+4. **Check SL / target** compares live premium and exits when hit (unless using bracket orders).
+
+See [Kotak Neo API v2](https://1q09.github.io/Kotak-neo-api-v2/?theme=light#login-with-totp).
+
 ## Notes
 
 - **NIFTY** uses NSE option chain (`nse-bse-api`).

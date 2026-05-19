@@ -3,5 +3,7 @@ dist/
 .env
 server/data/
 server/downloads/
+server/data/kotak-session.json
+server/data/trades/
 *.log
 .DS_Store

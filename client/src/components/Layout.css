@@ -1,0 +1,28 @@
+.app-nav {
+  display: flex;
+  gap: 0.5rem;
+  margin-bottom: 1.25rem;
+  padding-bottom: 0.75rem;
+  border-bottom: 1px solid var(--border);
+}
+
+.app-nav a {
+  font-size: 0.9rem;
+  font-weight: 600;
+  padding: 0.45rem 0.9rem;
+  border-radius: 8px;
+  color: var(--muted);
+  text-decoration: none;
+  transition: color 0.15s, background 0.15s;
+}
+
+.app-nav a:hover {
+  color: var(--text);
+  background: var(--surface);
+}
+
+.app-nav a.active {
+  color: var(--text);
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+}
