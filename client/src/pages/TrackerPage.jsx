@@ -103,6 +103,7 @@ export default function TrackerPage() {
   };
 
   const anchorStrike = anchor?.strike ?? stats?.anchorStrike;
+  const anchorSpot = anchor?.spot ?? stats?.anchorSpot;
 
   return (
     <>
@@ -168,6 +169,7 @@ export default function TrackerPage() {
           data={filtered}
           symbol={symbol}
           anchorStrike={anchorStrike}
+          anchorSpot={anchorSpot}
         />
       )}
     </>
