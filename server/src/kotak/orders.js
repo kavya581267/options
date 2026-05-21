@@ -1,7 +1,8 @@
 import axios from 'axios';
 import qs from 'qs';
-import { config } from '../config.js';
 import { getSession, isLoggedIn } from './client.js';
+
+const ORDER_SOURCE = 'NEOTRADEAPI';
 
 function tradeHeaders() {
   if (!isLoggedIn()) {
@@ -9,7 +10,6 @@ function tradeHeaders() {
   }
   const session = getSession();
   return {
-    Authorization: config.kotak.accessToken,
     'neo-fin-key': 'neotradeapi',
     Sid: session.tradeSid,
     Auth: session.tradeToken,
@@ -17,51 +17,100 @@ function tradeHeaders() {
   };
 }
 
+function serverIdParam() {
+  const session = getSession();
+  const sId = session?.hsServerId || session?.dataCenter || 'server1';
+  return sId ? { sId: String(sId) } : {};
+}
+
+function kotakOrderError(data, status) {
+  const msg = data?.errMsg || data?.message || data?.stat || 'Order rejected';
+  const code = data?.stCode != null ? ` (${data.stCode})` : status ? ` (HTTP ${status})` : '';
+  let hint = '';
+  if (data?.stCode === 100008) {
+    hint =
+      ' — Kotak blocks Place/Cancel order APIs unless your public IP is whitelisted in Neo app (More → Trade API → Add IP). ' +
+      'Quotes work without this; orders do not. Re-login from the same machine after whitelisting.';
+  } else if (data?.stCode === 1007) {
+    hint = ' — order request format error (should be fixed after server restart)';
+  }
+  return new Error(`${msg}${code}${hint}`);
+}
+
 /**
- * Place order via Kotak Neo API v2
- * @see https://1q09.github.io/Kotak-neo-api-v2/
+ * Place order via Kotak Neo API v2.
+ * Body must be form field jData = JSON string (not flat form fields).
+ * @see https://github.com/Kotak-Neo/Kotak-neo-api-v2
  */
 export async function placeOrder(params) {
   const session = getSession();
-  const body = qs.stringify({
+
+  const jData = {
+    am: params.amo || 'NO',
+    dq: params.disclosedQuantity || '0',
     es: params.exchangeSegment,
+    mp: params.marketProtection || '0',
     pc: params.product,
+    pf: params.pf || 'N',
     pr: params.price ?? '0',
     pt: params.orderType || 'MKT',
     qt: String(params.quantity),
     rt: params.validity || 'DAY',
+    tp: params.triggerPrice || '0',
     ts: params.tradingSymbol,
     tt: params.transactionType,
-    am: params.amo || 'NO',
-    dq: params.disclosedQuantity || '0',
-    mp: params.marketProtection || '0',
-    pf: params.pf || 'N',
-    tp: params.triggerPrice || '0',
-    tk: params.scripToken,
-    sot: params.squareOffType,
-    slt: params.stopLossType,
-    slv: params.stopLossValue,
-    sov: params.squareOffValue,
-    lat: params.lastTradedPrice,
-    tlt: params.trailingStopLoss,
-    tsv: params.trailingSlValue,
-  });
+    os: params.orderSource || ORDER_SOURCE,
+  };
 
-  const { data } = await axios.post(
-    `${session.baseUrl}/quick/order/rule/ms/place`,
-    body,
-    { headers: tradeHeaders(), params: { sId: 'server1' } }
-  );
-  return data;
+  if (params.scripToken) jData.tk = String(params.scripToken);
+  if (params.tag) jData.ig = params.tag;
+  if (params.squareOffType) jData.sot = params.squareOffType;
+  if (params.stopLossType) jData.slt = params.stopLossType;
+  if (params.stopLossValue) jData.slv = params.stopLossValue;
+  if (params.squareOffValue) jData.sov = params.squareOffValue;
+  if (params.lastTradedPrice) jData.lat = params.lastTradedPrice;
+  if (params.trailingStopLoss) jData.tlt = params.trailingStopLoss;
+  if (params.trailingSlValue) jData.tsv = params.trailingSlValue;
+
+  const body = qs.stringify({ jData: JSON.stringify(jData) });
+
+  try {
+    const { data, status } = await axios.post(
+      `${session.baseUrl}/quick/order/rule/ms/place`,
+      body,
+      { headers: tradeHeaders(), params: serverIdParam() }
+    );
+
+    if (data?.stat && String(data.stat).toLowerCase() !== 'ok') {
+      throw kotakOrderError(data, status);
+    }
+    return data;
+  } catch (err) {
+    if (err.response?.data) {
+      throw kotakOrderError(err.response.data, err.response.status);
+    }
+    throw err;
+  }
 }
 
 export async function cancelOrder(orderId) {
   const session = getSession();
-  const body = qs.stringify({ on: String(orderId) });
-  const { data } = await axios.post(
-    `${session.baseUrl}/quick/order/cancel`,
-    body,
-    { headers: tradeHeaders(), params: { sId: 'server1' } }
-  );
-  return data;
+  const body = qs.stringify({ jData: JSON.stringify({ on: String(orderId) }) });
+
+  try {
+    const { data, status } = await axios.post(
+      `${session.baseUrl}/quick/order/cancel`,
+      body,
+      { headers: tradeHeaders(), params: serverIdParam() }
+    );
+    if (data?.stat && String(data.stat).toLowerCase() !== 'ok') {
+      throw kotakOrderError(data, status);
+    }
+    return data;
+  } catch (err) {
+    if (err.response?.data) {
+      throw kotakOrderError(err.response.data, err.response.status);
+    }
+    throw err;
+  }
 }

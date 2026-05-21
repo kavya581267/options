@@ -123,6 +123,13 @@ export async function validateMpin(mpin) {
     ...session,
     tradeToken: payload.token,
     tradeSid: payload.sid,
+    tradeRid: payload.rid || null,
+    hsServerId:
+      payload.hsServerId ||
+      session?.hsServerId ||
+      payload.dataCenter ||
+      null,
+    dataCenter: payload.dataCenter || null,
     baseUrl: (payload.baseUrl || 'https://cis.kotaksecurities.com').replace(
       /\/$/,
       ''

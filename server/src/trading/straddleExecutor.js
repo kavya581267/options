@@ -61,8 +61,11 @@ export async function enterStraddle({ symbol, strike, entryPremium }) {
     premium ?? (await liveStraddlePremium(sym, resolvedStrike));
   const levels = computeExitLevels(entry, side, config.trading);
 
+  const exchSeg = (legs.ce.exchSeg || legs.pe.exchSeg || legs.exchangeSegment || '')
+    .toLowerCase();
+
   const orderOpts = (leg, boExtra = {}) => ({
-    exchangeSegment: legs.exchangeSegment,
+    exchangeSegment: exchSeg,
     product: useBo ? 'BO' : config.trading.product,
     orderType: 'MKT',
     quantity: qty(legs.lotSize, config.trading.lots),
@@ -121,8 +124,15 @@ export async function exitStraddle(symbol, reason = 'manual') {
 
   const { ce, pe } = trade.legs;
   const side = trade.side;
+  const exitSeg = (
+    trade.legs.ce?.exchSeg ||
+    trade.legs.pe?.exchSeg ||
+    trade.legs.exchangeSegment ||
+    ''
+  ).toLowerCase();
+
   const ceRes = await placeOrder({
-    exchangeSegment: trade.legs.exchangeSegment,
+    exchangeSegment: exitSeg,
     product: config.trading.product === 'BO' ? 'MIS' : config.trading.product,
     orderType: 'MKT',
     quantity: qty(trade.legs.lotSize, config.trading.lots),
@@ -132,7 +142,7 @@ export async function exitStraddle(symbol, reason = 'manual') {
     price: '0',
   });
   const peRes = await placeOrder({
-    exchangeSegment: trade.legs.exchangeSegment,
+    exchangeSegment: exitSeg,
     product: config.trading.product === 'BO' ? 'MIS' : config.trading.product,
     orderType: 'MKT',
     quantity: qty(trade.legs.lotSize, config.trading.lots),

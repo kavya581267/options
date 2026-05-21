@@ -25,38 +25,46 @@ export function getSchedule() {
   return { ...schedule };
 }
 
-function normalizeSchedule(input = {}) {
-  const entryTime = String(input.entryTime || schedule.entryTime || '09:15');
+function pickField(input, key, fallback) {
+  return Object.prototype.hasOwnProperty.call(input, key) ? input[key] : fallback;
+}
+
+function normalizeSchedule(input = {}, base = schedule) {
+  const entryTime = String(input.entryTime || base.entryTime || '09:15');
   if (!/^\d{2}:\d{2}$/.test(entryTime)) {
     throw new Error('entryTime must be HH:mm (24h IST)');
   }
-  const symbol = String(input.symbol || schedule.symbol || 'NIFTY').toUpperCase();
+  const symbol = String(input.symbol || base.symbol || 'NIFTY').toUpperCase();
   if (!['NIFTY', 'SENSEX'].includes(symbol)) {
     throw new Error('symbol must be NIFTY or SENSEX');
   }
   const monitorIntervalSec = Math.min(
     60,
-    Math.max(15, parseInt(input.monitorIntervalSec ?? schedule.monitorIntervalSec ?? 30, 10))
+    Math.max(15, parseInt(input.monitorIntervalSec ?? base.monitorIntervalSec ?? 30, 10))
   );
 
   return {
-    enabled: Boolean(input.enabled ?? schedule.enabled),
+    enabled: Boolean(pickField(input, 'enabled', base.enabled)),
     entryTime,
     symbol,
-    autoEnter: Boolean(input.autoEnter ?? schedule.autoEnter ?? true),
+    autoEnter: Boolean(pickField(input, 'autoEnter', base.autoEnter ?? true)),
     monitorIntervalSec,
-    saveToTracker: Boolean(input.saveToTracker ?? schedule.saveToTracker ?? true),
-    lastExecutedDate: input.lastExecutedDate ?? schedule.lastExecutedDate ?? null,
-    lastSnapshot: input.lastSnapshot ?? schedule.lastSnapshot ?? null,
-    lastError: input.lastError ?? schedule.lastError ?? null,
-    lastErrorAt: input.lastErrorAt ?? schedule.lastErrorAt ?? null,
+    saveToTracker: Boolean(pickField(input, 'saveToTracker', base.saveToTracker ?? true)),
+    lastExecutedDate: pickField(input, 'lastExecutedDate', base.lastExecutedDate ?? null),
+    lastSnapshot: pickField(input, 'lastSnapshot', base.lastSnapshot ?? null),
+    lastError: pickField(input, 'lastError', base.lastError ?? null),
+    lastErrorAt: pickField(input, 'lastErrorAt', base.lastErrorAt ?? null),
   };
 }
 
 export async function loadSchedule() {
   try {
     const raw = await fs.readFile(schedulePath(), 'utf-8');
-    schedule = normalizeSchedule(JSON.parse(raw));
+    const parsed = JSON.parse(raw);
+    schedule = normalizeSchedule(
+      { ...DEFAULT_SCHEDULE, ...parsed },
+      DEFAULT_SCHEDULE
+    );
   } catch (err) {
     if (err.code !== 'ENOENT') {
       console.warn('[schedule] load failed:', err.message);
@@ -83,6 +91,16 @@ export async function markScheduleExecuted(snapshot, enterResult = null) {
   };
   await fs.writeFile(schedulePath(), JSON.stringify(schedule, null, 2), 'utf-8');
   return getSchedule();
+}
+
+/** Clear today's run snapshot so schedule can fire again and UI resets. */
+export async function clearScheduleExecution() {
+  return updateSchedule({
+    lastExecutedDate: null,
+    lastSnapshot: null,
+    lastError: null,
+    lastErrorAt: null,
+  });
 }
 
 export async function markScheduleFailed(date, message) {

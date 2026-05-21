@@ -14,6 +14,7 @@ import {
   getSchedule,
   loadSchedule,
   updateSchedule,
+  clearScheduleExecution,
 } from '../trading/scheduleStorage.js';
 import { runScheduledEntry } from '../trading/scheduledEntry.js';
 import {
@@ -51,6 +52,19 @@ router.put('/schedule', async (req, res) => {
   try {
     const schedule = await updateSchedule(req.body);
     res.json({ success: true, schedule });
+  } catch (err) {
+    res.status(400).json({ error: err.message });
+  }
+});
+
+router.post('/schedule/reset-today', async (_req, res) => {
+  try {
+    const schedule = await clearScheduleExecution();
+    res.json({
+      success: true,
+      schedule,
+      executedToday: false,
+    });
   } catch (err) {
     res.status(400).json({ error: err.message });
   }

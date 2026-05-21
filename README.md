@@ -110,10 +110,37 @@ Open **Kotak Neo** in the app nav (`/kotak`). This is independent of the straddl
 
 See [Kotak Neo API v2](https://1q09.github.io/Kotak-neo-api-v2/?theme=light#login-with-totp).
 
+### Whitelist your public IP (required for orders)
+
+Kotak allows **quotes and login** from any IP, but **Place / Cancel order** APIs return `unauthorized (100008)` unless your **public IP is whitelisted** in the Neo Trade API app ([Kotak static IP details](https://www.kotakneo.com/platform/kotak-neo-trade-api/static-ip-details/)).
+
+**Get your public IP** (run on the **same machine** that runs `npm run dev` / `npm start`):
+
+```bash
+curl https://api.ipify.org
+```
+
+Or open in a browser: **[https://api.ipify.org](https://api.ipify.org)** — you’ll see a single line like `100.52.218.224`. That is the address to whitelist (no `http://`, no port).
+
+**Add it in Kotak Neo:**
+
+1. Neo app → **More** → **Trade API** → your application  
+2. **Add IP** / whitelist → paste the IP from api.ipify.org  
+3. Save, then **log in again** on the Kotak page (TOTP + MPIN) from the same network  
+
+You can usually register **two IPs** (e.g. home + office). If your ISP changes your IP often, orders will fail again until you update the whitelist or use a **static IP** / cloud server with a fixed IP.
+
+| Symptom | Likely cause |
+|---------|----------------|
+| Quotes work, orders fail `100008` | IP not whitelisted or session from a different IP than whitelisted |
+| `body invalid` on orders | Old bug — orders must use `jData` JSON (fixed in this repo) |
+| SENSEX quotes fail | Log in to Kotak; BSE website API is blocked — use Kotak for SENSEX |
+
 ## Notes
 
-- **NIFTY** uses NSE option chain (`nse-bse-api`).
-- **SENSEX** uses BSE spot + BSE derivatives option chain. The BSE API often requires running from an **India IP** during market hours; if SENSEX fails, NIFTY collection still continues.
+- **NIFTY** uses NSE option chain (`nse-bse-api`), or Kotak quotes when logged in.
+- **SENSEX** uses **Kotak quotes** when you are logged in (TOTP + MPIN). The BSE public option-chain API is blocked from most servers; without Kotak login, SENSEX tracker data will not collect.
+- **Kotak auto-enter** needs IP whitelisting — see [Get your IP](https://api.ipify.org) and the Kotak section above.
 - NSE/BSE rate-limit requests; the collector staggers symbols by ~2s and skips duplicate fetches within 55s.
 - Straddle = ATM CE last price + ATM PE last price (closest strike to spot).
 - For a database later, replace `server/src/storage.js` with your DB client; API routes can stay the same.
