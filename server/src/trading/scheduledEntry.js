@@ -1,17 +1,47 @@
 import { config } from '../config.js';
 import { fetchAnchor } from '../fetcher.js';
-import { isLoggedIn } from '../kotak/client.js';
-import { fetchStraddleQuote } from '../kotak/quotes.js';
+import { isLoggedIn, loadSession } from '../kotak/client.js';
+import { fetchKotakAnchor } from '../kotak/quotes.js';
 import { getISTDateString, formatISTTime } from '../marketHours.js';
 import { setAnchor, appendReading } from '../storage.js';
 import { enterStraddle } from './straddleExecutor.js';
-import { getSchedule, markScheduleExecuted } from './scheduleStorage.js';
+import {
+  getSchedule,
+  markScheduleExecuted,
+  markScheduleFailed,
+} from './scheduleStorage.js';
 import { readTrade } from './tradeStorage.js';
+
+async function captureAnchor(symbol) {
+  const sym = symbol.toUpperCase();
+
+  if (isLoggedIn()) {
+    try {
+      return await fetchKotakAnchor(sym);
+    } catch (err) {
+      if (sym === 'SENSEX') {
+        throw new Error(
+          `SENSEX via Kotak failed: ${err.message}. Stay logged in on the Kotak page — the BSE website API is blocked and cannot be used as a fallback.`
+        );
+      }
+      console.warn(`[schedule] Kotak anchor failed, trying NSE:`, err.message);
+    }
+  }
+
+  if (sym === 'SENSEX') {
+    throw new Error(
+      'SENSEX needs Kotak login (TOTP + MPIN). The BSE option chain API is blocked from this server.'
+    );
+  }
+
+  return fetchAnchor(sym);
+}
 
 /**
  * At user's entry time: spot → ATM strike → straddle premium, then optional Kotak entry.
  */
 export async function runScheduledEntry({ force = false } = {}) {
+  await loadSession();
   const sched = getSchedule();
   const today = getISTDateString();
 
@@ -22,7 +52,7 @@ export async function runScheduledEntry({ force = false } = {}) {
     return { skipped: true, reason: 'Already executed today' };
   }
 
-  const symbol = sched.symbol || config.trading.symbol;
+  const symbol = (sched.symbol || config.trading.symbol).toUpperCase();
   const existing = await readTrade(symbol);
   if (existing?.status === 'open') {
     return { skipped: true, reason: 'Trade already open' };
@@ -30,21 +60,12 @@ export async function runScheduledEntry({ force = false } = {}) {
 
   console.log(`[schedule] ${formatISTTime()} — capturing ${symbol} spot + strike`);
 
-  const anchorData = await fetchAnchor(symbol);
-  let premium = anchorData.straddlePremium;
-  let quoteSource = anchorData.source || 'NSE/BSE';
-
-  if (isLoggedIn()) {
-    try {
-      const kotak = await fetchStraddleQuote(symbol, anchorData.strike);
-      premium = kotak.straddlePremium;
-      quoteSource = 'kotak';
-      anchorData.spot = kotak.spot ?? anchorData.spot;
-      anchorData.cePremium = kotak.cePremium;
-      anchorData.pePremium = kotak.pePremium;
-    } catch (err) {
-      console.warn(`[schedule] Kotak quote failed, using chain premium:`, err.message);
-    }
+  let anchorData;
+  try {
+    anchorData = await captureAnchor(symbol);
+  } catch (err) {
+    await markScheduleFailed(today, err.message);
+    throw err;
   }
 
   const snapshot = {
@@ -55,8 +76,8 @@ export async function runScheduledEntry({ force = false } = {}) {
     strike: anchorData.strike,
     cePremium: anchorData.cePremium,
     pePremium: anchorData.pePremium,
-    straddlePremium: premium,
-    quoteSource,
+    straddlePremium: anchorData.straddlePremium,
+    quoteSource: anchorData.source || 'NSE/BSE',
   };
 
   if (sched.saveToTracker) {
@@ -85,12 +106,18 @@ export async function runScheduledEntry({ force = false } = {}) {
     if (!isLoggedIn()) {
       enterResult = { skipped: true, reason: 'Kotak not logged in for auto-enter' };
     } else {
-      enterResult = await enterStraddle({
-        symbol,
-        strike: snapshot.strike,
-        entryPremium: premium,
-      });
-      console.log(`[schedule] Auto-enter:`, JSON.stringify(enterResult));
+      try {
+        enterResult = await enterStraddle({
+          symbol,
+          strike: snapshot.strike,
+          entryPremium: snapshot.straddlePremium,
+        });
+        console.log(`[schedule] Auto-enter:`, JSON.stringify(enterResult));
+      } catch (err) {
+        const msg = err.response?.data?.message || err.message;
+        enterResult = { success: false, error: msg };
+        console.error(`[schedule] Auto-enter failed:`, msg);
+      }
     }
   }
 

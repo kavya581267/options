@@ -22,12 +22,21 @@ async function loadBseOptionRows() {
     validateStatus: () => true,
   });
 
+  if (typeof response.data === 'string') {
+    if (response.data.includes('<!DOCTYPE') || response.data.includes('<html')) {
+      throw new Error(
+        'BSE option chain blocked by BSE website (HTML response). Use Kotak login for SENSEX trading.'
+      );
+    }
+    throw new Error('BSE option chain returned unexpected text response');
+  }
+
   const payload = typeof response.data === 'object' ? response.data : null;
   const rows = payload?.Table ?? payload?.table ?? payload?.data;
 
   if (!Array.isArray(rows) || !rows.length) {
     throw new Error(
-      'BSE option chain unavailable. Run from India during market hours (9:15–15:30 IST).'
+      'BSE option chain empty — use Kotak login for SENSEX, or try again during market hours (9:15–15:30 IST).'
     );
   }
   return rows;

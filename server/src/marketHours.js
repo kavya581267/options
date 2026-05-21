@@ -78,6 +78,31 @@ export function shouldCaptureAnchor(date = new Date()) {
   return isAnchorMinute(date) || canCaptureLateAnchor(date);
 }
 
+export function isBeforeMarketStart(date = new Date()) {
+  if (config.forceFetch) return false;
+  if (!isWeekday(date)) return true;
+  const p = getISTParts(date);
+  const start = parseTime(config.marketStart);
+  const currentMins = p.hour * 60 + p.minute;
+  const startMins = start.hours * 60 + start.minutes;
+  return currentMins < startMins;
+}
+
+/** After 9:20 grace: set today's anchor from current quotes if 9:15 was missed */
+export function canCaptureLateAnchorFromCurrent(date = new Date()) {
+  if (config.forceFetch) return isWithinMarketHours(date);
+  if (!isWithinMarketHours(date)) return false;
+  const p = getISTParts(date);
+  const anchor = parseTime(config.marketStart);
+  const currentMins = p.hour * 60 + p.minute;
+  const anchorMins = anchor.hours * 60 + anchor.minutes;
+  return currentMins > anchorMins + 5;
+}
+
+export function canCaptureAnchorNow(date = new Date()) {
+  return shouldCaptureAnchor(date) || canCaptureLateAnchorFromCurrent(date);
+}
+
 export function isTimeMinute(hhmm, date = new Date()) {
   const p = getISTParts(date);
   const t = parseTime(hhmm);

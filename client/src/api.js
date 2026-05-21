@@ -22,7 +22,13 @@ export async function fetchDayData(symbol, date) {
   return res.json();
 }
 
-export async function triggerFetch() {
-  const res = await fetch(`${BASE}/fetch`, { method: 'POST' });
-  return res.json();
+export async function triggerFetch({ symbols, forceAnchor = true } = {}) {
+  const res = await fetch(`${BASE}/fetch`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ symbols, forceAnchor }),
+  });
+  const data = await res.json();
+  if (!res.ok) throw new Error(data.error || res.statusText);
+  return data;
 }

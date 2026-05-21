@@ -1,8 +1,10 @@
 import { config } from './config.js';
 import { fetchAnchor, fetchStraddleAtStrike } from './fetcher.js';
+import { loadSession } from './kotak/client.js';
 import {
   isWithinMarketHours,
-  shouldCaptureAnchor,
+  canCaptureAnchorNow,
+  isBeforeMarketStart,
   formatISTTime,
 } from './marketHours.js';
 import {
@@ -14,16 +16,15 @@ import {
 const MIN_GAP_MS = 55000;
 const lastFetchBySymbol = new Map();
 
-export async function collectSymbol(symbol) {
+export async function collectSymbol(symbol, { forceAnchor = false } = {}) {
   const existingAnchor = await getAnchor(symbol);
 
   if (!existingAnchor) {
-    if (!shouldCaptureAnchor()) {
-      return {
-        symbol,
-        skipped: true,
-        reason: 'Waiting for 9:15 anchor (spot + strike)',
-      };
+    if (!forceAnchor && !canCaptureAnchorNow()) {
+      const reason = isBeforeMarketStart()
+        ? `Opens at ${config.marketStart} IST — anchor not set yet`
+        : `Waiting for ${config.marketStart} anchor window (${config.marketStart}–9:20 IST)`;
+      return { symbol, skipped: true, reason };
     }
 
     const anchorData = await fetchAnchor(symbol);
@@ -43,7 +44,9 @@ export async function collectSymbol(symbol) {
   return { symbol, success: true, anchor: false, entry };
 }
 
-export async function collectAll(symbols = config.symbols) {
+export async function collectAll(symbols = config.symbols, { forceAnchor = false } = {}) {
+  await loadSession();
+
   if (!isWithinMarketHours()) {
     return { skipped: true, reason: 'Outside market hours' };
   }
@@ -58,7 +61,7 @@ export async function collectAll(symbols = config.symbols) {
     }
 
     try {
-      const result = await collectSymbol(symbol);
+      const result = await collectSymbol(symbol, { forceAnchor });
       lastFetchBySymbol.set(symbol, Date.now());
       results.push(result);
       await new Promise((r) => setTimeout(r, 2000));

@@ -50,7 +50,8 @@ router.post('/fetch', async (req, res) => {
     const symbols = req.body?.symbols
       ? req.body.symbols.map((s) => s.toUpperCase())
       : config.symbols;
-    const result = await collectAll(symbols);
+    const forceAnchor = req.body?.forceAnchor !== false;
+    const result = await collectAll(symbols, { forceAnchor });
     res.json(result);
   } catch (err) {
     res.status(500).json({ error: err.message });

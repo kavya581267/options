@@ -11,6 +11,8 @@ const DEFAULT_SCHEDULE = {
   saveToTracker: true,
   lastExecutedDate: null,
   lastSnapshot: null,
+  lastError: null,
+  lastErrorAt: null,
 };
 
 let schedule = { ...DEFAULT_SCHEDULE };
@@ -46,6 +48,8 @@ function normalizeSchedule(input = {}) {
     saveToTracker: Boolean(input.saveToTracker ?? schedule.saveToTracker ?? true),
     lastExecutedDate: input.lastExecutedDate ?? schedule.lastExecutedDate ?? null,
     lastSnapshot: input.lastSnapshot ?? schedule.lastSnapshot ?? null,
+    lastError: input.lastError ?? schedule.lastError ?? null,
+    lastErrorAt: input.lastErrorAt ?? schedule.lastErrorAt ?? null,
   };
 }
 
@@ -74,6 +78,18 @@ export async function markScheduleExecuted(snapshot, enterResult = null) {
     ...schedule,
     lastExecutedDate: snapshot.date,
     lastSnapshot: { ...snapshot, enterResult },
+    lastError: null,
+    lastErrorAt: null,
+  };
+  await fs.writeFile(schedulePath(), JSON.stringify(schedule, null, 2), 'utf-8');
+  return getSchedule();
+}
+
+export async function markScheduleFailed(date, message) {
+  schedule = {
+    ...schedule,
+    lastError: String(message),
+    lastErrorAt: new Date().toISOString(),
   };
   await fs.writeFile(schedulePath(), JSON.stringify(schedule, null, 2), 'utf-8');
   return getSchedule();

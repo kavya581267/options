@@ -18,8 +18,16 @@ export default function SchedulePanel({
       <p className="kotak-hint">
         At your chosen time: fetch spot → ATM strike → straddle premium. Optionally
         place Kotak orders and monitor SL/target every{' '}
-        {scheduleForm.monitorIntervalSec}s.
+        {scheduleForm.monitorIntervalSec}s. Retries for 5 minutes if the first
+        attempt fails.
       </p>
+
+      {scheduleForm.symbol === 'SENSEX' && (
+        <p className="warn-banner schedule-warn">
+          SENSEX uses Kotak quotes only (BSE website API is blocked). Log in with
+          TOTP + MPIN on this page before the scheduled time.
+        </p>
+      )}
 
       <label className="checkbox-label schedule-enable">
         <input
@@ -107,6 +115,19 @@ export default function SchedulePanel({
         {saved && <span className="ok">Schedule saved</span>}
       </div>
 
+      {scheduleStatus?.lastError && (
+        <p className="error-banner schedule-error">
+          Last run failed
+          {scheduleStatus.lastErrorAt
+            ? ` (${new Date(scheduleStatus.lastErrorAt).toLocaleString('en-IN', { timeZone: 'Asia/Kolkata' })} IST)`
+            : ''}
+          : {scheduleStatus.lastError}
+          {scheduleStatus.loggedIn && !scheduleStatus.executedToday && (
+            <> — Kotak is logged in now; use Run now to retry and clear this.</>
+          )}
+        </p>
+      )}
+
       {scheduleStatus && (
         <div className="schedule-status">
           <span>
@@ -116,6 +137,11 @@ export default function SchedulePanel({
                 ? `Armed for ${scheduleForm.entryTime} IST`
                 : 'Disabled'}
           </span>
+          {scheduleStatus.loggedIn ? (
+            <span className="ok">Kotak logged in</span>
+          ) : (
+            <span className="muted">Kotak not logged in</span>
+          )}
           {scheduleStatus.marketOpen ? (
             <span className="ok">Market open</span>
           ) : (

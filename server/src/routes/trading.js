@@ -39,6 +39,8 @@ router.get('/schedule', async (_req, res) => {
   res.json({
     schedule,
     executedToday: schedule.lastExecutedDate === getISTDateString(),
+    lastError: schedule.lastError ?? null,
+    lastErrorAt: schedule.lastErrorAt ?? null,
     marketOpen: isWithinMarketHours(),
     weekday: isWeekday(),
     loggedIn: isLoggedIn(),

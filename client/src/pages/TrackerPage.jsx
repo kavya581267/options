@@ -92,8 +92,17 @@ export default function TrackerPage() {
 
   const handleManualFetch = async () => {
     setFetching(true);
+    setError(null);
     try {
-      await triggerFetch();
+      const result = await triggerFetch({ symbols: [symbol], forceAnchor: true });
+      const row = result.results?.find((r) => r.symbol === symbol);
+      if (row?.skipped) {
+        setError(row.reason || 'Fetch skipped');
+      } else if (row?.error) {
+        setError(row.error);
+      } else if (row?.success === false) {
+        setError(row.error || 'Fetch failed');
+      }
       await loadData();
     } catch (e) {
       setError(e.message);
@@ -152,6 +161,14 @@ export default function TrackerPage() {
         anchor={anchor}
       />
 
+      {symbol === 'SENSEX' && !anchor && date === todayIST() && (
+        <p className="warn-banner">
+          SENSEX needs Kotak login (TOTP + MPIN on the Kotak page). BSE data is
+          blocked — use Fetch now during market hours to set today&apos;s anchor
+          from current quotes.
+        </p>
+      )}
+
       {loading ? (
         <div className="loading">Loading data…</div>
       ) : filtered.length === 0 ? (
@@ -160,8 +177,9 @@ export default function TrackerPage() {
             No readings for {symbol} on {date}.
           </p>
           <p className="hint">
-            Server captures spot + strike at 9:15 IST, then straddle premium
-            every minute until 15:30.
+            Anchor is set at 9:15 IST (or on first successful fetch after 9:20).
+            Then straddle premium is recorded every minute until 15:30. Click
+            Fetch now to capture from current market data.
           </p>
         </div>
       ) : (

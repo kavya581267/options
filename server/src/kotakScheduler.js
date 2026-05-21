@@ -11,7 +11,7 @@ import { listOpenTrades } from './trading/tradeStorage.js';
 import { monitorOpenTrade } from './trading/straddleExecutor.js';
 import { isLoggedIn } from './kotak/client.js';
 
-let entryCheckedMinute = null;
+let entryRunning = false;
 let monitorRunning = false;
 
 function parseEntryTime(entryTime) {
@@ -19,7 +19,8 @@ function parseEntryTime(entryTime) {
   return { hours: h, minutes: m };
 }
 
-function isEntryMinute(entryTime) {
+/** Current clock as minutes since midnight in IST. */
+function istMinutesNow() {
   const formatter = new Intl.DateTimeFormat('en-IN', {
     timeZone: config.timezone,
     hour: '2-digit',
@@ -29,33 +30,37 @@ function isEntryMinute(entryTime) {
   const parts = Object.fromEntries(
     formatter.formatToParts(new Date()).map((p) => [p.type, p.value])
   );
-  const hour = parseInt(parts.hour, 10);
-  const minute = parseInt(parts.minute, 10);
+  return parseInt(parts.hour, 10) * 60 + parseInt(parts.minute, 10);
+}
+
+/** Entry time through +graceMinutes (default 5) — retries if the first attempt fails. */
+function isInEntryWindow(entryTime, graceMinutes = 5) {
   const t = parseEntryTime(entryTime);
-  return hour === t.hours && minute === t.minutes;
+  const start = t.hours * 60 + t.minutes;
+  const now = istMinutesNow();
+  return now >= start && now < start + graceMinutes;
 }
 
 async function checkScheduledEntry() {
+  if (entryRunning) return;
+
   const sched = getSchedule();
   if (!sched.enabled || !isWeekday() || !isWithinMarketHours()) return;
 
   const today = getISTDateString();
   if (sched.lastExecutedDate === today) return;
 
-  const minuteKey = `${today}-${sched.entryTime}`;
-  if (!isEntryMinute(sched.entryTime)) {
-    entryCheckedMinute = null;
-    return;
-  }
-  if (entryCheckedMinute === minuteKey) return;
-  entryCheckedMinute = minuteKey;
+  if (!isInEntryWindow(sched.entryTime)) return;
 
+  entryRunning = true;
   try {
     console.log(`[kotak-scheduler] ${formatISTTime()} — scheduled entry ${sched.entryTime}`);
     const result = await runScheduledEntry();
     console.log(`[kotak-scheduler] entry result:`, JSON.stringify(result));
   } catch (err) {
     console.error(`[kotak-scheduler] scheduled entry failed:`, err.message);
+  } finally {
+    entryRunning = false;
   }
 }
 

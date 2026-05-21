@@ -2,6 +2,12 @@
   margin-bottom: 0.75rem;
 }
 
+.schedule-panel .schedule-warn,
+.schedule-panel .schedule-error {
+  margin-top: 0.75rem;
+  font-size: 0.85rem;
+}
+
 .schedule-status {
   display: flex;
   gap: 1rem;
