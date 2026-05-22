@@ -3,6 +3,8 @@ import cors from 'cors';
 import { config } from './config.js';
 import { loadTradingConfig } from './trading/tradingConfig.js';
 import { loadFyersTradingConfig } from './trading/fyersTradingConfig.js';
+import { kotakStrategies } from './trading/kotakStrategies.js';
+import { fyersStrategies } from './trading/fyersStrategies.js';
 import { startScheduler } from './scheduler.js';
 import { startKotakScheduler } from './kotakScheduler.js';
 import { startFyersScheduler } from './fyersScheduler.js';
@@ -10,6 +12,8 @@ import apiRouter from './routes/api.js';
 
 await loadTradingConfig();
 await loadFyersTradingConfig();
+await kotakStrategies.loadStrategies();
+await fyersStrategies.loadStrategies();
 
 const app = express();
 

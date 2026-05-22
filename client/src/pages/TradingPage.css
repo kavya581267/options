@@ -1,0 +1,163 @@
+@import './KotakPage.css';
+
+.trading-page .header {
+  margin-bottom: 1rem;
+}
+
+.header-badges {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  align-items: center;
+}
+
+.badge.schedule-badge.armed {
+  background: #3b82f622;
+  color: #93c5fd;
+  border: 1px solid #3b82f644;
+}
+
+.badge.schedule-badge.done {
+  background: #22c55e22;
+  color: var(--green);
+  border: 1px solid #22c55e44;
+}
+
+.badge.schedule-badge.off {
+  background: var(--surface-2);
+  color: var(--muted);
+  border: 1px solid var(--border);
+}
+
+.tab-btn.has-schedule:not(.active) {
+  color: #93c5fd;
+}
+
+.trading-layout {
+  display: grid;
+  grid-template-columns: minmax(220px, 260px) minmax(0, 1fr);
+  gap: 1.25rem;
+  align-items: start;
+}
+
+@media (max-width: 900px) {
+  .trading-layout {
+    grid-template-columns: 1fr;
+  }
+
+  .strategy-sidebar {
+    position: static;
+  }
+}
+
+.trading-main {
+  min-width: 0;
+}
+
+.strategy-header {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 1rem 1.25rem;
+  margin-bottom: 1rem;
+}
+
+.strategy-header-top {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  align-items: flex-start;
+  justify-content: space-between;
+  margin-bottom: 0.75rem;
+}
+
+.strategy-name-input {
+  flex: 1;
+  min-width: 200px;
+  font-size: 1.15rem;
+  font-weight: 700;
+  padding: 0.5rem 0.65rem;
+  border-radius: 8px;
+  border: 1px solid var(--border);
+  background: var(--surface-2);
+  color: var(--text);
+}
+
+.strategy-desc-input {
+  width: 100%;
+  font-family: inherit;
+  font-size: 0.9rem;
+  padding: 0.5rem 0.65rem;
+  border-radius: 8px;
+  border: 1px solid var(--border);
+  background: var(--surface-2);
+  color: var(--text);
+  resize: vertical;
+  min-height: 2.5rem;
+}
+
+.strategy-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  align-items: center;
+}
+
+.strategy-actions .btn-secondary {
+  background: var(--surface-2);
+  color: var(--text);
+}
+
+.strategy-actions .btn-danger {
+  background: transparent;
+  color: #f87171;
+  border-color: #f8717144;
+}
+
+.strategy-summary {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem 1rem;
+  font-size: 0.8rem;
+  color: var(--muted);
+  margin-top: 0.5rem;
+}
+
+.tab-nav {
+  display: flex;
+  gap: 0.25rem;
+  margin-bottom: 1rem;
+  border-bottom: 1px solid var(--border);
+  padding-bottom: 0;
+}
+
+.tab-btn {
+  font-family: inherit;
+  font-size: 0.85rem;
+  font-weight: 600;
+  padding: 0.6rem 1rem;
+  border: none;
+  border-bottom: 2px solid transparent;
+  background: transparent;
+  color: var(--muted);
+  cursor: pointer;
+  margin-bottom: -1px;
+}
+
+.tab-btn:hover {
+  color: var(--text);
+}
+
+.tab-btn.active {
+  color: var(--accent);
+  border-bottom-color: var(--accent);
+}
+
+.session-compact {
+  margin-bottom: 1rem;
+}
+
+.muted {
+  color: var(--muted);
+  font-size: 0.85rem;
+}

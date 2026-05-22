@@ -8,7 +8,8 @@ import {
   validateMpin,
 } from '../kotak/client.js';
 import { readTrade, listOpenTrades } from '../trading/tradeStorage.js';
-import { hasSavedConfigFile } from '../trading/tradingConfig.js';
+import { kotakStrategies } from '../trading/kotakStrategies.js';
+import { attachStrategyCrud } from './strategyRoutes.js';
 import { getOpenTradeLive } from '../trading/liveStatus.js';
 import {
   getSchedule,
@@ -28,11 +29,12 @@ import {
   monitorOpenTrade,
 } from '../trading/straddleExecutor.js';
 import { computeExitLevels } from '../trading/slTarget.js';
-import { updateTradingConfig } from '../trading/tradingConfig.js';
 import { fetchStraddleQuote } from '../kotak/quotes.js';
 import { getAnchor } from '../storage.js';
 
 const router = Router();
+
+attachStrategyCrud(router, kotakStrategies);
 
 router.get('/schedule', async (_req, res) => {
   await loadSchedule();
@@ -51,6 +53,7 @@ router.get('/schedule', async (_req, res) => {
 router.put('/schedule', async (req, res) => {
   try {
     const schedule = await updateSchedule(req.body);
+    await kotakStrategies.patchActiveScheduleFields(req.body);
     res.json({ success: true, schedule });
   } catch (err) {
     res.status(400).json({ error: err.message });
@@ -79,15 +82,6 @@ router.post('/schedule/run-now', async (req, res) => {
   }
 });
 
-router.get('/config', async (_req, res) => {
-  res.json({
-    trading: { ...config.trading },
-    configSource: (await hasSavedConfigFile()) ? 'file' : 'env',
-    kotakConfigured: Boolean(config.kotak.accessToken),
-    loggedIn: isLoggedIn(),
-  });
-});
-
 router.get('/trades/open', async (_req, res) => {
   const open = await listOpenTrades();
   res.json({ open });
@@ -107,10 +101,28 @@ router.get('/live/:symbol', async (req, res) => {
   }
 });
 
+router.get('/config', async (_req, res) => {
+  try {
+    await kotakStrategies.loadStrategies();
+    const data = kotakStrategies.listStrategies();
+    res.json({
+      trading: { ...config.trading },
+      configSource: 'strategies',
+      kotakConfigured: Boolean(config.kotak.accessToken),
+      loggedIn: isLoggedIn(),
+      activeStrategyId: data.activeStrategyId,
+      activeStrategy: data.activeStrategy,
+      strategies: data.strategies,
+    });
+  } catch (err) {
+    res.status(400).json({ error: err.message });
+  }
+});
+
 router.put('/config', async (req, res) => {
   try {
-    const trading = await updateTradingConfig(req.body);
-    res.json({ success: true, trading });
+    const strategy = await kotakStrategies.updateActiveTrading(req.body);
+    res.json({ success: true, trading: strategy.trading, activeStrategy: strategy });
   } catch (err) {
     res.status(400).json({ error: err.message });
   }

@@ -1,3 +1,39 @@
+.schedule-panel-status {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  padding: 0.75rem 1rem;
+  border-radius: 8px;
+  border: 1px solid var(--border);
+  background: var(--surface-2);
+  margin-bottom: 0.75rem;
+  font-size: 0.88rem;
+}
+
+.schedule-panel-status strong {
+  color: var(--text);
+}
+
+.schedule-panel-status span {
+  color: var(--muted);
+  line-height: 1.4;
+}
+
+.schedule-panel-status.state-upcoming,
+.schedule-panel-status.state-running {
+  border-color: #3b82f644;
+  background: #3b82f610;
+}
+
+.schedule-panel-status.state-done {
+  border-color: #22c55e44;
+  background: #22c55e10;
+}
+
+.schedule-panel-status.state-off {
+  opacity: 0.9;
+}
+
 .schedule-panel .schedule-enable {
   margin-bottom: 0.75rem;
 }

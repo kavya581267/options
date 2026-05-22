@@ -1,7 +1,9 @@
+import { computeScheduleSummary } from '../trading/scheduleStatus';
 import './SchedulePanel.css';
 
 export default function SchedulePanel({
   brokerName = 'Kotak',
+  activeStrategyName,
   schedule,
   scheduleStatus,
   scheduleForm,
@@ -12,6 +14,15 @@ export default function SchedulePanel({
   onRunNow,
 }) {
   const snap = schedule?.lastSnapshot;
+  const summary = computeScheduleSummary({
+    schedule: scheduleForm,
+    scheduleStatus: scheduleStatus
+      ? { ...scheduleStatus, brokerName }
+      : null,
+    activeStrategyName: activeStrategyName || brokerName,
+    hasUnsavedSchedule: false,
+  });
+
   const loginHint =
     brokerName === 'Fyers'
       ? 'OAuth login on this page'
@@ -20,6 +31,12 @@ export default function SchedulePanel({
   return (
     <section className="kotak-section schedule-panel">
       <h2 className="section-title">Scheduled entry (IST)</h2>
+
+      <div className={`schedule-panel-status state-${summary.state}`}>
+        <strong>{summary.headline}</strong>
+        <span>{summary.detail}</span>
+      </div>
+
       <p className="kotak-hint">
         At your chosen time: fetch spot → ATM strike → straddle premium. Optionally
         place {brokerName} orders and monitor SL/target every{' '}

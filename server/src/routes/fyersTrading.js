@@ -8,7 +8,8 @@ import {
   exchangeAuthCode,
 } from '../fyers/client.js';
 import { readTrade, listOpenTrades } from '../trading/fyersTradeStorage.js';
-import { hasSavedFyersConfigFile, updateFyersTradingConfig } from '../trading/fyersTradingConfig.js';
+import { fyersStrategies } from '../trading/fyersStrategies.js';
+import { attachStrategyCrud } from './strategyRoutes.js';
 import { getOpenTradeLive } from '../trading/fyersLiveStatus.js';
 import {
   getSchedule,
@@ -33,6 +34,8 @@ import { getAnchor } from '../storage.js';
 
 const router = Router();
 
+attachStrategyCrud(router, fyersStrategies);
+
 router.get('/schedule', async (_req, res) => {
   await loadSchedule();
   const schedule = getSchedule();
@@ -50,6 +53,7 @@ router.get('/schedule', async (_req, res) => {
 router.put('/schedule', async (req, res) => {
   try {
     const schedule = await updateSchedule(req.body);
+    await fyersStrategies.patchActiveScheduleFields(req.body);
     res.json({ success: true, schedule });
   } catch (err) {
     res.status(400).json({ error: err.message });
@@ -75,18 +79,27 @@ router.post('/schedule/run-now', async (req, res) => {
 });
 
 router.get('/config', async (_req, res) => {
-  res.json({
-    trading: { ...config.fyersTrading },
-    configSource: (await hasSavedFyersConfigFile()) ? 'file' : 'env',
-    fyersConfigured: Boolean(config.fyers.appId && config.fyers.secretKey),
-    loggedIn: isLoggedIn(),
-  });
+  try {
+    await fyersStrategies.loadStrategies();
+    const data = fyersStrategies.listStrategies();
+    res.json({
+      trading: { ...config.fyersTrading },
+      configSource: 'strategies',
+      fyersConfigured: Boolean(config.fyers.appId && config.fyers.secretKey),
+      loggedIn: isLoggedIn(),
+      activeStrategyId: data.activeStrategyId,
+      activeStrategy: data.activeStrategy,
+      strategies: data.strategies,
+    });
+  } catch (err) {
+    res.status(400).json({ error: err.message });
+  }
 });
 
 router.put('/config', async (req, res) => {
   try {
-    const trading = await updateFyersTradingConfig(req.body);
-    res.json({ success: true, trading });
+    const strategy = await fyersStrategies.updateActiveTrading(req.body);
+    res.json({ success: true, trading: strategy.trading, activeStrategy: strategy });
   } catch (err) {
     res.status(400).json({ error: err.message });
   }

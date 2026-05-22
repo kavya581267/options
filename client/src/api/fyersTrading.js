@@ -1,4 +1,8 @@
+import { createStrategyApi } from './strategyApi.js';
+
 const BASE = '/api/fyers';
+
+export const fyersStrategyApi = createStrategyApi(BASE);
 
 export async function fetchFyersConfig() {
   const res = await fetch(`${BASE}/config`);
@@ -20,6 +24,13 @@ export async function saveFyersSchedule(schedule) {
   });
   const data = await res.json();
   if (!res.ok) throw new Error(data.error || 'Save schedule failed');
+  return data;
+}
+
+export async function resetFyersScheduleToday() {
+  const res = await fetch(`${BASE}/schedule/reset-today`, { method: 'POST' });
+  const data = await res.json();
+  if (!res.ok) throw new Error(data.error || 'Reset failed');
   return data;
 }
 

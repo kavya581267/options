@@ -24,6 +24,7 @@ function PlaceholderCard({ label, sub, highlight, sl, target }) {
 }
 
 export default function LiveQuotePanel({
+  brokerName = 'Broker',
   loggedIn,
   strike,
   quote,
@@ -40,21 +41,21 @@ export default function LiveQuotePanel({
   const showData = hasQuote && !loading;
 
   let status = 'idle';
-  let statusHint = 'Login and enter a strike, then refresh for Kotak LTP.';
+  let statusHint = `Login and enter a strike, then refresh for ${brokerName} LTP.`;
   if (!loggedIn) {
-    statusHint = 'Login with TOTP + MPIN to fetch Kotak live quotes.';
+    statusHint = `Log in to ${brokerName} to fetch live quotes.`;
   } else if (isOpen) {
     status = 'running';
     statusHint = 'Open straddle — quotes refresh automatically.';
   } else if (loading) {
     status = 'loading';
-    statusHint = 'Fetching from Kotak…';
+    statusHint = `Fetching from ${brokerName}…`;
   } else if (!strike) {
     statusHint = 'Enter a strike above, then refresh quote.';
   } else if (hasQuote) {
     statusHint = quote?.fetchedAt
       ? `Updated ${new Date(quote.fetchedAt).toLocaleTimeString('en-IN', { timeZone: 'Asia/Kolkata' })} IST`
-      : 'Kotak quote loaded.';
+      : `${brokerName} quote loaded.`;
   }
 
   const pnlClass =
@@ -96,7 +97,7 @@ export default function LiveQuotePanel({
         {showData ? (
           <>
             <div className="kotak-card">
-              <span className="label">Spot (Kotak)</span>
+              <span className="label">Spot ({brokerName})</span>
               <span className="value">{fmt(quote.spot)}</span>
             </div>
             <div className="kotak-card">
@@ -114,7 +115,7 @@ export default function LiveQuotePanel({
           </>
         ) : (
           <>
-            <PlaceholderCard label="Spot (Kotak)" />
+            <PlaceholderCard label={`Spot (${brokerName})`} />
             <PlaceholderCard label="CE premium" />
             <PlaceholderCard label="PE premium" />
             <PlaceholderCard label="Straddle premium" highlight />
@@ -188,10 +189,10 @@ export default function LiveQuotePanel({
           disabled={refreshDisabled}
           onClick={onRefresh}
         >
-          {loading ? 'Fetching…' : 'Refresh Kotak quote'}
+          {loading ? 'Fetching…' : `Refresh ${brokerName} quote`}
         </button>
         {!loggedIn && (
-          <span className="muted">Requires Kotak session</span>
+          <span className="muted">Requires {brokerName} session</span>
         )}
         {loggedIn && !strike && (
           <span className="muted">Strike required</span>

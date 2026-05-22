@@ -100,8 +100,18 @@ Or click **Fetch now** in the UI (requires `FORCE_FETCH=true` when market is clo
 
 Open **Kotak Neo** in the app nav (`/kotak`). This is independent of the straddle tracker chart.
 
+### Strategies
+
+Each broker page has a **Strategies** sidebar. A strategy includes:
+
+- **Name** and **description**
+- **Trading parameters** (symbol, side, lots, product, SL/target)
+- **Schedule** (IST entry time, auto-enter, monitor interval, tracker anchor)
+
+Only the **active** strategy drives the scheduler and default order settings. Use **+ New** to add another preset (e.g. NIFTY morning vs SENSEX afternoon), **Use this strategy** to activate, **Save strategy** to persist. Data is stored in `server/data/kotak-strategies.json` (or `fyers-strategies.json`). Your old `kotak-trading-config.json` is migrated into a “Default straddle” strategy on first load.
+
 1. Set in `server/.env`: `KOTAK_ACCESS_TOKEN`, `KOTAK_MOBILE_NUMBER`, `KOTAK_UCC` (credentials only).
-2. On the Kotak page, edit **Trading config** (side, lots, SL/target, etc.) and click **Save config** — stored in `server/data/kotak-trading-config.json`.
+2. Create or edit a strategy under **Parameters** and **Schedule** tabs; click **Save strategy**.
 3. Set **Scheduled entry** time (IST), enable it, and save — at that time the app captures spot → ATM strike → premium; optional auto-enter on Kotak.
 4. **Login TOTP** → **Validate MPIN** (required for auto-enter and Kotak live quotes).
 5. Optionally **Use tracker 9:15 anchor** or manual **Enter straddle**.
@@ -141,9 +151,9 @@ You can usually register **two IPs** (e.g. home + office). If your ISP changes y
 Open **Fyers** in the app nav (`/fyers`). Same straddle workflow as Kotak Neo, with a separate schedule, config, and trade storage.
 
 1. Create an app at [Fyers API dashboard](https://myapi.fyers.in/dashboard/) and set **Redirect URL** to match `FYERS_REDIRECT_URI` in `server/.env` (e.g. `http://127.0.0.1:5173/`).
-2. Set `FYERS_APP_ID`, `FYERS_SECRET_KEY`, `FYERS_REDIRECT_URI` in `server/.env`.
-3. On the Fyers page: **Get login URL** → sign in → copy `auth_code` from the redirect → **Complete login**.
-4. Configure trading defaults and **Scheduled entry** (stored in `fyers-trading-config.json` and `fyers-schedule.json`).
+2. Set `FYERS_API_KEY`, `FYERS_API_SECRET`, and `FYERS_REDIRECT_URI` in `server/.env`.
+3. On the Fyers page: **Get login URL** → sign in → redirect completes login automatically on the Fyers tab.
+4. Use **Strategies** (same as Kotak) — stored in `fyers-strategies.json`.
 5. **Enter straddle** / **Exit** / SL-target monitor work like Kotak; trades live under `server/data/trades/fyers/`.
 
 See [Fyers API v3 docs](https://myapi.fyers.in/docsv3).
