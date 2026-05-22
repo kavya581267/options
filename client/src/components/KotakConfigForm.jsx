@@ -3,18 +3,24 @@ import './KotakConfigForm.css';
 const SYMBOLS = ['NIFTY', 'SENSEX'];
 
 export default function KotakConfigForm({
+  broker = 'kotak',
   tradingForm,
   setTradingForm,
   busy,
   configSaved,
   onSave,
 }) {
+  const isFyers = broker === 'fyers';
+  const configFile = isFyers
+    ? 'fyers-trading-config.json'
+    : 'kotak-trading-config.json';
+
   return (
     <section className="kotak-section">
       <h2 className="section-title">Trading config</h2>
       <p className="kotak-hint config-hint">
-        Saved to <code>server/data/kotak-trading-config.json</code> (overrides
-        .env). .env applies only before first save.
+        Saved to <code>server/data/{configFile}</code> (overrides .env). .env
+        applies only before first save.
       </p>
       <div className="config-form">
         <label>
@@ -68,22 +74,24 @@ export default function KotakConfigForm({
           >
             <option value="MIS">MIS</option>
             <option value="NRML">NRML</option>
-            <option value="BO">BO (bracket)</option>
+            {!isFyers && <option value="BO">BO (bracket)</option>}
           </select>
         </label>
-        <label className="checkbox-label">
-          <input
-            type="checkbox"
-            checked={tradingForm.useBracketOrder}
-            onChange={(e) =>
-              setTradingForm((f) => ({
-                ...f,
-                useBracketOrder: e.target.checked,
-              }))
-            }
-          />
-          Kotak bracket order (SL/target on exchange)
-        </label>
+        {!isFyers && (
+          <label className="checkbox-label">
+            <input
+              type="checkbox"
+              checked={tradingForm.useBracketOrder}
+              onChange={(e) =>
+                setTradingForm((f) => ({
+                  ...f,
+                  useBracketOrder: e.target.checked,
+                }))
+              }
+            />
+            Kotak bracket order (SL/target on exchange)
+          </label>
+        )}
         <label>
           SL type
           <select

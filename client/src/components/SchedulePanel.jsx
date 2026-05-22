@@ -1,6 +1,7 @@
 import './SchedulePanel.css';
 
 export default function SchedulePanel({
+  brokerName = 'Kotak',
   schedule,
   scheduleStatus,
   scheduleForm,
@@ -11,21 +12,32 @@ export default function SchedulePanel({
   onRunNow,
 }) {
   const snap = schedule?.lastSnapshot;
+  const loginHint =
+    brokerName === 'Fyers'
+      ? 'OAuth login on this page'
+      : 'TOTP + MPIN on this page';
 
   return (
     <section className="kotak-section schedule-panel">
       <h2 className="section-title">Scheduled entry (IST)</h2>
       <p className="kotak-hint">
         At your chosen time: fetch spot → ATM strike → straddle premium. Optionally
-        place Kotak orders and monitor SL/target every{' '}
+        place {brokerName} orders and monitor SL/target every{' '}
         {scheduleForm.monitorIntervalSec}s. Retries for 5 minutes if the first
         attempt fails.
       </p>
 
-      {scheduleForm.symbol === 'SENSEX' && (
+      {scheduleForm.symbol === 'SENSEX' && brokerName === 'Kotak' && (
         <p className="warn-banner schedule-warn">
           SENSEX uses Kotak quotes only (BSE website API is blocked). Log in with
           TOTP + MPIN on this page before the scheduled time.
+        </p>
+      )}
+
+      {scheduleForm.symbol === 'SENSEX' && brokerName === 'Fyers' && (
+        <p className="warn-banner schedule-warn">
+          SENSEX option chain via Fyers (BSE). Log in with OAuth before the
+          scheduled time.
         </p>
       )}
 
@@ -86,7 +98,7 @@ export default function SchedulePanel({
               setScheduleForm((f) => ({ ...f, autoEnter: e.target.checked }))
             }
           />
-          Auto-enter straddle on Kotak (needs login)
+          Auto-enter straddle on {brokerName} (needs login)
         </label>
         <label className="checkbox-label">
           <input
@@ -123,7 +135,11 @@ export default function SchedulePanel({
             : ''}
           : {scheduleStatus.lastError}
           {scheduleStatus.loggedIn && !scheduleStatus.executedToday && (
-            <> — Kotak is logged in now; use Run now to retry and clear this.</>
+            <>
+              {' '}
+              — {brokerName} is logged in now; use Run now to retry and clear
+              this.
+            </>
           )}
         </p>
       )}
@@ -138,9 +154,9 @@ export default function SchedulePanel({
                 : 'Disabled'}
           </span>
           {scheduleStatus.loggedIn ? (
-            <span className="ok">Kotak logged in</span>
+            <span className="ok">{brokerName} logged in</span>
           ) : (
-            <span className="muted">Kotak not logged in</span>
+            <span className="muted">{brokerName} not logged in — {loginHint}</span>
           )}
           {scheduleStatus.marketOpen ? (
             <span className="ok">Market open</span>

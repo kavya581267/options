@@ -2,6 +2,7 @@ import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import Layout from './components/Layout';
 import TrackerPage from './pages/TrackerPage';
 import KotakPage from './pages/KotakPage';
+import FyersPage from './pages/FyersPage';
 import './App.css';
 
 export default function App() {
@@ -11,6 +12,7 @@ export default function App() {
         <Route element={<Layout />}>
           <Route index element={<TrackerPage />} />
           <Route path="kotak" element={<KotakPage />} />
+          <Route path="fyers" element={<FyersPage />} />
         </Route>
       </Routes>
     </BrowserRouter>

@@ -136,6 +136,18 @@ You can usually register **two IPs** (e.g. home + office). If your ISP changes y
 | `body invalid` on orders | Old bug — orders must use `jData` JSON (fixed in this repo) |
 | SENSEX quotes fail | Log in to Kotak; BSE website API is blocked — use Kotak for SENSEX |
 
+## Fyers (separate page)
+
+Open **Fyers** in the app nav (`/fyers`). Same straddle workflow as Kotak Neo, with a separate schedule, config, and trade storage.
+
+1. Create an app at [Fyers API dashboard](https://myapi.fyers.in/dashboard/) and set **Redirect URL** to match `FYERS_REDIRECT_URI` in `server/.env` (e.g. `http://127.0.0.1:5173/`).
+2. Set `FYERS_APP_ID`, `FYERS_SECRET_KEY`, `FYERS_REDIRECT_URI` in `server/.env`.
+3. On the Fyers page: **Get login URL** → sign in → copy `auth_code` from the redirect → **Complete login**.
+4. Configure trading defaults and **Scheduled entry** (stored in `fyers-trading-config.json` and `fyers-schedule.json`).
+5. **Enter straddle** / **Exit** / SL-target monitor work like Kotak; trades live under `server/data/trades/fyers/`.
+
+See [Fyers API v3 docs](https://myapi.fyers.in/docsv3).
+
 ## Notes
 
 - **NIFTY** uses NSE option chain (`nse-bse-api`), or Kotak quotes when logged in.

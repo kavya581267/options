@@ -25,6 +25,22 @@ export const config = {
     mobileNumber: process.env.KOTAK_MOBILE_NUMBER || '',
     ucc: process.env.KOTAK_UCC || '',
   },
+  fyers: {
+    appId:
+      process.env.FYERS_APP_ID ||
+      process.env.FYERS_API_KEY ||
+      process.env.FYERS_CLIENT_ID ||
+      '',
+    secretKey:
+      process.env.FYERS_SECRET_KEY ||
+      process.env.FYERS_API_SECRET ||
+      process.env.FYERS_SECRET ||
+      '',
+    redirectUri:
+      process.env.FYERS_REDIRECT_URI ||
+      process.env.FYERS_REDIRECT_URL ||
+      'http://127.0.0.1:5173/',
+  },
   trading: {
     symbol: (process.env.TRADING_SYMBOL || 'NIFTY').toUpperCase(),
     side: (process.env.TRADING_SIDE || 'SELL').toUpperCase(),
@@ -35,5 +51,17 @@ export const config = {
     slValue: parseFloat(process.env.SL_VALUE || '20'),
     targetType: process.env.TARGET_TYPE || 'percent',
     targetValue: parseFloat(process.env.TARGET_VALUE || '30'),
+  },
+  fyersTrading: {
+    symbol: (process.env.FYERS_TRADING_SYMBOL || process.env.TRADING_SYMBOL || 'NIFTY').toUpperCase(),
+    side: (process.env.FYERS_TRADING_SIDE || process.env.TRADING_SIDE || 'SELL').toUpperCase(),
+    lots: parseInt(process.env.FYERS_TRADING_LOTS || process.env.TRADING_LOTS || '1', 10),
+    product: process.env.FYERS_TRADING_PRODUCT || process.env.TRADING_PRODUCT || 'MIS',
+    slType: process.env.FYERS_SL_TYPE || process.env.SL_TYPE || 'percent',
+    slValue: parseFloat(process.env.FYERS_SL_VALUE || process.env.SL_VALUE || '20'),
+    targetType: process.env.FYERS_TARGET_TYPE || process.env.TARGET_TYPE || 'percent',
+    targetValue: parseFloat(
+      process.env.FYERS_TARGET_VALUE || process.env.TARGET_VALUE || '30'
+    ),
   },
 };

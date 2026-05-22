@@ -2,11 +2,14 @@ import express from 'express';
 import cors from 'cors';
 import { config } from './config.js';
 import { loadTradingConfig } from './trading/tradingConfig.js';
+import { loadFyersTradingConfig } from './trading/fyersTradingConfig.js';
 import { startScheduler } from './scheduler.js';
 import { startKotakScheduler } from './kotakScheduler.js';
+import { startFyersScheduler } from './fyersScheduler.js';
 import apiRouter from './routes/api.js';
 
 await loadTradingConfig();
+await loadFyersTradingConfig();
 
 const app = express();
 
@@ -22,6 +25,14 @@ try {
   console.warn('[kotak] routes not loaded:', err.message);
 }
 
+try {
+  const { default: fyersRouter } = await import('./routes/fyersTrading.js');
+  app.use('/api/fyers', fyersRouter);
+  console.log('Fyers trading API: /api/fyers');
+} catch (err) {
+  console.warn('[fyers] routes not loaded:', err.message);
+}
+
 const server = app.listen(config.port, () => {
   console.log(`Server running on http://localhost:${config.port}`);
   console.log(`Data directory: ${config.dataDir}`);
@@ -29,6 +40,9 @@ const server = app.listen(config.port, () => {
   startScheduler();
   startKotakScheduler().catch((err) => {
     console.warn('[kotak-scheduler] failed to start:', err.message);
+  });
+  startFyersScheduler().catch((err) => {
+    console.warn('[fyers-scheduler] failed to start:', err.message);
   });
 });
 
