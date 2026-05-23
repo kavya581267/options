@@ -14,6 +14,7 @@ import {
   savePreset,
 } from '../api/screener';
 import IndicatorBuilder from '../components/screener/IndicatorBuilder';
+import CollapsibleSection from '../components/screener/CollapsibleSection';
 import '../components/screener/IndicatorBuilder.css';
 import './ScreenerPage.css';
 
@@ -314,8 +315,8 @@ export default function ScreenerPage() {
         : 0;
 
   return (
-    <>
-      <header className="header">
+    <div className="screener-page">
+      <header className="header screener-header">
         <div>
           <h1>Stock Screener</h1>
           <p className="subtitle">
@@ -334,134 +335,147 @@ export default function ScreenerPage() {
         </div>
       </header>
 
-      <div className="preset-row">
-        <label>
-          Strategy
-          <select value={presetId} onChange={(e) => handlePresetChange(e.target.value)}>
-            {swingPresets.length > 0 && (
-              <optgroup label="Swing trading">
-                {swingPresets.map((p) => (
-                  <option key={p.id} value={p.id}>
-                    {p.name}
-                  </option>
-                ))}
-              </optgroup>
-            )}
-            {generalPresets.length > 0 && (
-              <optgroup label="General">
-                {generalPresets.map((p) => (
-                  <option key={p.id} value={p.id}>
-                    {p.name}
-                  </option>
-                ))}
-              </optgroup>
-            )}
-            {customPresets.length > 0 && (
-              <optgroup label="Your presets">
-                {customPresets.map((p) => (
-                  <option key={p.id} value={p.id}>
-                    {p.name}
-                  </option>
-                ))}
-              </optgroup>
-            )}
-          </select>
-        </label>
-        <label>
-          Save as preset
-          <input
-            type="text"
-            placeholder="My screen name"
-            value={presetName}
-            onChange={(e) => setPresetName(e.target.value)}
-          />
-        </label>
-        <button
-          type="button"
-          className="btn-secondary"
-          disabled={!presetName.trim() || savingPreset}
-          onClick={handleSavePreset}
-        >
-          {savingPreset ? 'Saving…' : 'Save preset'}
-        </button>
-      </div>
-
-      {activePreset?.description && (
-        <div className="strategy-description">{activePreset.description}</div>
-      )}
-
-      <div className="query-label-banner">
-        Active screen: <strong>{meta?.queryLabel || queryLabel}</strong>
-      </div>
-
-      <IndicatorBuilder
-        catalog={catalog}
-        query={query}
-        onChange={(next) => {
-          setQuery({ ...next, universe: query.universe || 'all' });
-          setPresetId('');
-        }}
-        disabled={scanning}
-      />
-
-      <div className="screener-controls">
-        <label>
-          Date
-          <select value={date} onChange={(e) => setDate(e.target.value)}>
-            {dates.length === 0 && <option value={date}>{date}</option>}
-            {dates.map((d) => (
-              <option key={d} value={d}>
-                {d}
-              </option>
-            ))}
-          </select>
-        </label>
-
-        <label>
-          Universe
-          <select
-            value={query.universe || 'all'}
-            onChange={(e) => setQuery({ ...query, universe: e.target.value })}
-            disabled={scanning}
+      <CollapsibleSection title="Strategy" defaultOpen>
+        <div className="preset-row">
+          <label>
+            Strategy
+            <select value={presetId} onChange={(e) => handlePresetChange(e.target.value)}>
+              {swingPresets.length > 0 && (
+                <optgroup label="Swing trading">
+                  {swingPresets.map((p) => (
+                    <option key={p.id} value={p.id}>
+                      {p.name}
+                    </option>
+                  ))}
+                </optgroup>
+              )}
+              {generalPresets.length > 0 && (
+                <optgroup label="General">
+                  {generalPresets.map((p) => (
+                    <option key={p.id} value={p.id}>
+                      {p.name}
+                    </option>
+                  ))}
+                </optgroup>
+              )}
+              {customPresets.length > 0 && (
+                <optgroup label="Your presets">
+                  {customPresets.map((p) => (
+                    <option key={p.id} value={p.id}>
+                      {p.name}
+                    </option>
+                  ))}
+                </optgroup>
+              )}
+            </select>
+          </label>
+          <label>
+            Save as preset
+            <input
+              type="text"
+              placeholder="My screen name"
+              value={presetName}
+              onChange={(e) => setPresetName(e.target.value)}
+            />
+          </label>
+          <button
+            type="button"
+            className="btn-secondary"
+            disabled={!presetName.trim() || savingPreset}
+            onClick={handleSavePreset}
           >
-            {universes.map((u) => (
-              <option key={u.id} value={u.id}>
-                {u.label} ({u.count})
-              </option>
-            ))}
-          </select>
-        </label>
+            {savingPreset ? 'Saving…' : 'Save preset'}
+          </button>
+        </div>
 
-        {meta && (
-          <div className="screener-meta">
-            <span>{meta.matchedCount ?? stocks.length} matched</span>
-            <span>
-              {meta.processedCount ?? status?.processed ?? 0} /{' '}
-              {meta.totalScanned ?? status?.total ?? '—'} scanned
-            </span>
-            {meta.status === 'running' && <span className="live-badge">Live</span>}
-            {meta.status === 'failed' && <span className="failed-badge">Partial</span>}
-            {meta.completedAt && meta.status === 'complete' && (
-              <span>Completed {new Date(meta.completedAt).toLocaleString('en-IN')}</span>
-            )}
-          </div>
+        {activePreset?.description && (
+          <div className="strategy-description">{activePreset.description}</div>
         )}
-      </div>
+
+        <div className="query-label-banner">
+          Active screen: <strong>{meta?.queryLabel || queryLabel}</strong>
+        </div>
+      </CollapsibleSection>
+
+      <CollapsibleSection title="Screen rules" subtitle="Indicators & logic" defaultOpen={false}>
+        <IndicatorBuilder
+          catalog={catalog}
+          query={query}
+          onChange={(next) => {
+            setQuery({ ...next, universe: query.universe || 'all' });
+            setPresetId('');
+          }}
+          disabled={scanning}
+        />
+      </CollapsibleSection>
+
+      <CollapsibleSection title="Scan settings" defaultOpen>
+        <div className="screener-controls screener-controls-inset">
+          <label>
+            Date
+            <select value={date} onChange={(e) => setDate(e.target.value)}>
+              {dates.length === 0 && <option value={date}>{date}</option>}
+              {dates.map((d) => (
+                <option key={d} value={d}>
+                  {d}
+                </option>
+              ))}
+            </select>
+          </label>
+
+          <label>
+            Universe
+            <select
+              value={query.universe || 'all'}
+              onChange={(e) => setQuery({ ...query, universe: e.target.value })}
+              disabled={scanning}
+            >
+              {universes.map((u) => (
+                <option key={u.id} value={u.id}>
+                  {u.label} ({u.count})
+                </option>
+              ))}
+            </select>
+          </label>
+
+          {meta && (
+            <div className="screener-meta">
+              <span>{meta.matchedCount ?? stocks.length} matched</span>
+              <span>
+                {meta.processedCount ?? status?.processed ?? 0} /{' '}
+                {meta.totalScanned ?? status?.total ?? '—'} scanned
+              </span>
+              {meta.status === 'running' && <span className="live-badge">Live</span>}
+              {meta.status === 'failed' && <span className="failed-badge">Partial</span>}
+              {meta.completedAt && meta.status === 'complete' && (
+                <span>Completed {new Date(meta.completedAt).toLocaleString('en-IN')}</span>
+              )}
+            </div>
+          )}
+        </div>
+      </CollapsibleSection>
 
       {scanning && status?.running && (
-        <div className="screener-progress">
-          <div className="screener-progress-bar">
-            <div style={{ width: `${progressPct}%` }} />
+        <CollapsibleSection title="Scan progress" defaultOpen badge={`${progressPct}%`}>
+          <div className="screener-progress screener-progress-inset">
+            <div className="screener-progress-bar">
+              <div style={{ width: `${progressPct}%` }} />
+            </div>
+            <p>
+              {status.phase === 'cache'
+                ? `Building price history cache — ${status.cacheProgress?.done ?? 0}/${status.cacheProgress?.total ?? '?'} files`
+                : `Scanning ${status.currentSymbol || '…'} — ${status.processed}/${status.total} (${progressPct}%) · ${status.matched} matched`}
+            </p>
+            <p className="hint">{status.queryLabel || queryLabel}</p>
           </div>
-          <p>
-            {status.phase === 'cache'
-              ? `Building price history cache — ${status.cacheProgress?.done ?? 0}/${status.cacheProgress?.total ?? '?'} files`
-              : `Scanning ${status.currentSymbol || '…'} — ${status.processed}/${status.total} (${progressPct}%) · ${status.matched} matched`}
-          </p>
-          <p className="hint">{status.queryLabel || queryLabel}</p>
-        </div>
+        </CollapsibleSection>
       )}
 
+      <CollapsibleSection
+        title="Results"
+        defaultOpen
+        badge={sorted.length > 0 ? `${sorted.length} stocks` : undefined}
+      >
       {error && <div className="error-banner">{error}</div>}
 
       {!loading && !scanning && !meta && (
@@ -568,6 +582,7 @@ export default function ScreenerPage() {
         </div>
         </>
       ) : null}
+      </CollapsibleSection>
 
       {selected && (
         <div className="screener-detail-overlay" onClick={() => { setSelected(null); setDetails(null); }}>
@@ -588,8 +603,7 @@ export default function ScreenerPage() {
             {details && !details.error && (
               <div className="screener-detail-body">
                 {selected.indicators && (
-                  <section>
-                    <h3>Screen metrics</h3>
+                  <CollapsibleSection title="Screen metrics" defaultOpen className="screener-detail-section">
                     <dl className="detail-grid">
                       {Object.entries(selected.indicators).flatMap(([id, metrics]) =>
                         Object.entries(metrics)
@@ -604,11 +618,10 @@ export default function ScreenerPage() {
                           ))
                       )}
                     </dl>
-                  </section>
+                  </CollapsibleSection>
                 )}
 
-                <section>
-                  <h3>Overview</h3>
+                <CollapsibleSection title="Overview" defaultOpen className="screener-detail-section">
                   <dl className="detail-grid">
                     <dt>Exchanges</dt>
                     <dd>{details.exchanges?.join(', ')}</dd>
@@ -617,11 +630,14 @@ export default function ScreenerPage() {
                     <dt>Industry</dt>
                     <dd>{details.industry || '—'}</dd>
                   </dl>
-                </section>
+                </CollapsibleSection>
 
                 {details.scanHistory?.length > 0 && (
-                  <section>
-                    <h3>Daily scan history</h3>
+                  <CollapsibleSection
+                    title="Daily scan history"
+                    defaultOpen={false}
+                    className="screener-detail-section"
+                  >
                     <table className="screener-mini-table">
                       <thead>
                         <tr>
@@ -638,13 +654,13 @@ export default function ScreenerPage() {
                         ))}
                       </tbody>
                     </table>
-                  </section>
+                  </CollapsibleSection>
                 )}
               </div>
             )}
           </div>
         </div>
       )}
-    </>
+    </div>
   );
 }

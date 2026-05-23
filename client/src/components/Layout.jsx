@@ -5,6 +5,7 @@ import './Layout.css';
 export default function Layout() {
   const location = useLocation();
   const navigate = useNavigate();
+  const isWidePage = location.pathname.startsWith('/screener');
 
   useEffect(() => {
     const params = new URLSearchParams(location.search);
@@ -14,7 +15,7 @@ export default function Layout() {
   }, [location.pathname, location.search, navigate]);
 
   return (
-    <div className="app">
+    <div className={`app${isWidePage ? ' app-wide' : ''}`}>
       <nav className="app-nav">
         <NavLink to="/" end className={({ isActive }) => (isActive ? 'active' : '')}>
           Straddle Tracker

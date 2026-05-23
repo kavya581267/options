@@ -157,7 +157,36 @@
   border: 1px solid var(--border);
   background: var(--surface-2);
   color: var(--text);
-  min-width: 180px;
+  min-width: 0;
+  width: 100%;
+  max-width: 280px;
+}
+
+@media (max-width: 640px) {
+  .preset-row {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .preset-row label,
+  .preset-row .btn-secondary {
+    width: 100%;
+  }
+
+  .preset-row select,
+  .preset-row input {
+    max-width: none;
+  }
+
+  .indicator-card-head {
+    flex-direction: column;
+    gap: 0.5rem;
+  }
+
+  .indicator-add select {
+    max-width: none;
+    width: 100%;
+  }
 }
 
 .query-label-banner {

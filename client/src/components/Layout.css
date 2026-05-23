@@ -26,3 +26,15 @@
   background: var(--surface-2);
   border: 1px solid var(--border);
 }
+
+@media (max-width: 640px) {
+  .app-nav {
+    flex-wrap: wrap;
+    gap: 0.35rem;
+  }
+
+  .app-nav a {
+    font-size: 0.8rem;
+    padding: 0.4rem 0.65rem;
+  }
+}
