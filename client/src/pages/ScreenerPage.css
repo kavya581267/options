@@ -37,6 +37,38 @@
   margin-left: auto;
   font-size: 0.85rem;
   color: var(--muted);
+  align-items: center;
+}
+
+.live-badge {
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: var(--green);
+  padding: 0.15rem 0.5rem;
+  border-radius: 999px;
+  border: 1px solid #22c55e44;
+  background: #22c55e18;
+  animation: pulse-live 1.5s ease-in-out infinite;
+}
+
+.failed-badge {
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: var(--orange);
+  padding: 0.15rem 0.5rem;
+  border-radius: 999px;
+  border: 1px solid #f59e0b44;
+  background: #f59e0b18;
+}
+
+@keyframes pulse-live {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.55;
+  }
 }
 
 .screener-progress {

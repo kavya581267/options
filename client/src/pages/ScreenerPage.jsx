@@ -90,9 +90,11 @@ export default function ScreenerPage() {
   }, []);
 
   const loadResults = useCallback(
-    async (activeQuery, activeDate, activeQueryId) => {
-      setLoading(true);
-      setError(null);
+    async (activeQuery, activeDate, activeQueryId, { silent = false } = {}) => {
+      if (!silent) {
+        setLoading(true);
+        setError(null);
+      }
       try {
         const data = await fetchScreenerResults({
           query: activeQuery,
@@ -102,14 +104,19 @@ export default function ScreenerPage() {
         setStocks(data.stocks || []);
         setMeta(data);
         setQueryId(data.queryId || activeQueryId);
+        if (data.status === 'failed' && data.lastError) {
+          setError(`Scan stopped early: ${data.lastError}. Showing ${data.matchedCount} matches saved so far.`);
+        }
       } catch (e) {
-        setStocks([]);
-        setMeta(null);
-        if (!e.message.includes('No scan results')) {
-          setError(e.message);
+        if (!silent) {
+          setStocks([]);
+          setMeta(null);
+          if (!e.message.includes('No scan results')) {
+            setError(e.message);
+          }
         }
       } finally {
-        setLoading(false);
+        if (!silent) setLoading(false);
       }
     },
     []
@@ -140,32 +147,43 @@ export default function ScreenerPage() {
   }, [query, refreshDates]);
 
   useEffect(() => {
-    if (!query.indicators?.length) return;
+    if (!query.indicators?.length || scanning) return;
     loadResults(query, date, queryId);
-  }, [query, date, queryId, loadResults]);
+  }, [query, date, queryId, loadResults, scanning]);
 
   useEffect(() => {
     if (!scanning) return undefined;
+
+    const scanDate = todayIST();
 
     const poll = async () => {
       try {
         const s = await fetchScreenerStatus();
         setStatus(s);
+        const id = s.queryId || queryId;
+
+        if (s.liveSnapshot) {
+          setStocks(s.liveSnapshot.stocks || []);
+          setMeta(s.liveSnapshot);
+          setQueryId(id);
+          setDate(scanDate);
+          setDates((prev) => (prev.includes(scanDate) ? prev : [scanDate, ...prev]));
+        }
+
         if (!s.running) {
           setScanning(false);
-          const { queryId: id } = await refreshDates(query, s.queryId);
-          if (id) setQueryId(id);
-          await loadResults(query, date, id || queryId);
+          await refreshDates(query, id);
+          await loadResults(query, scanDate, id);
         }
       } catch {
-        /* ignore */
+        /* ignore poll errors */
       }
     };
 
     poll();
-    const id = setInterval(poll, 2000);
-    return () => clearInterval(id);
-  }, [scanning, query, date, queryId, refreshDates, loadResults]);
+    const intervalId = setInterval(poll, 2000);
+    return () => clearInterval(intervalId);
+  }, [scanning, query, queryId, refreshDates, loadResults]);
 
   const getCellValue = (row, key) => {
     if (key.includes('.')) return getMetricValue(row, key);
@@ -201,10 +219,14 @@ export default function ScreenerPage() {
   const handleRunScan = async () => {
     setScanning(true);
     setError(null);
+    setStocks([]);
+    setMeta(null);
+    const scanDate = todayIST();
+    setDate(scanDate);
     try {
       const res = await runScreenerScan({
         query: { ...query, universe: query.universe || 'all' },
-        date: todayIST(),
+        date: scanDate,
         force: true,
       });
       setQueryId(res.queryId);
@@ -388,10 +410,14 @@ export default function ScreenerPage() {
 
         {meta && (
           <div className="screener-meta">
-            <span>{meta.matchedCount} matched</span>
-            <span>{meta.totalScanned} scanned</span>
-            <span>{meta.logic || query.logic} logic</span>
-            {meta.completedAt && (
+            <span>{meta.matchedCount ?? stocks.length} matched</span>
+            <span>
+              {meta.processedCount ?? status?.processed ?? 0} /{' '}
+              {meta.totalScanned ?? status?.total ?? '—'} scanned
+            </span>
+            {meta.status === 'running' && <span className="live-badge">Live</span>}
+            {meta.status === 'failed' && <span className="failed-badge">Partial</span>}
+            {meta.completedAt && meta.status === 'complete' && (
               <span>Completed {new Date(meta.completedAt).toLocaleString('en-IN')}</span>
             )}
           </div>
@@ -414,17 +440,23 @@ export default function ScreenerPage() {
 
       {error && <div className="error-banner">{error}</div>}
 
-      {!loading && !meta && !scanning && (
+      {!loading && !scanning && !meta && (
         <div className="empty">
           <p>No scan results for this screen on {date}.</p>
           <p className="hint">
-            Customize indicators above, then click Run scan today. Each unique screen
-            is stored separately by date.
+            Customize indicators above, then click Run scan today. Matches appear
+            live as the scan runs and are saved to disk immediately.
           </p>
         </div>
       )}
 
-      {loading ? (
+      {scanning && stocks.length === 0 && !loading && (
+        <div className="empty">
+          <p>Scan running… matches will appear in the table as they are found.</p>
+        </div>
+      )}
+
+      {loading && !scanning ? (
         <div className="loading">Loading results…</div>
       ) : sorted.length > 0 ? (
         <div className="screener-table-wrap">

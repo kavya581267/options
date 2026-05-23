@@ -1,9 +1,10 @@
 import { getUniverse } from './universe.js';
 import { saveScanResult, todayDateStr } from './screenerStorage.js';
-import { config } from '../config.js';
 import {
   buildBhavcopyHistoryCache,
   getSeries,
+  warmDayCache,
+  clearDayCache,
 } from './bhavcopyHistory.js';
 import { normalizeQuery, queryId } from './query.js';
 import {
@@ -12,6 +13,8 @@ import {
   requiredHistoryDays,
   resultColumnsForQuery,
 } from './indicators/registry.js';
+
+const UPDATE_EVERY_N_MATCHES = 20;
 
 let runState = {
   running: false,
@@ -28,11 +31,10 @@ let runState = {
   errors: [],
   startedAt: null,
   finishedAt: null,
+  status: null,
+  lastError: null,
+  liveSnapshot: null,
 };
-
-function sleep(ms) {
-  return new Promise((r) => setTimeout(r, ms));
-}
 
 function flattenIndicators(indicatorResults) {
   const flat = {};
@@ -42,14 +44,40 @@ function flattenIndicators(indicatorResults) {
   return flat;
 }
 
-function getNestedValue(obj, keyPath) {
-  const parts = keyPath.split('.');
-  let cur = obj;
-  for (const p of parts) {
-    if (cur == null) return null;
-    cur = cur[p];
-  }
-  return cur;
+function buildPayload({
+  id,
+  query,
+  queryLabel,
+  date,
+  results,
+  status,
+  startedAt,
+  totalScanned,
+  processed,
+  errors,
+  force,
+  lastError,
+}) {
+  return {
+    queryId: id,
+    query,
+    queryLabel,
+    logic: query.logic,
+    universe: query.universe,
+    date,
+    status,
+    startedAt,
+    completedAt: status === 'complete' ? new Date().toISOString() : null,
+    totalScanned,
+    processedCount: processed,
+    matchedCount: results.length,
+    errorCount: errors.length,
+    columns: resultColumnsForQuery(query),
+    stocks: [...results],
+    errors: errors.slice(0, 100),
+    force,
+    lastError: lastError || null,
+  };
 }
 
 async function analyzeStock(stock, query) {
@@ -137,9 +165,42 @@ export async function runScreener({
     errors: [],
     startedAt: new Date().toISOString(),
     finishedAt: null,
+    status: 'running',
+    lastError: null,
+    liveSnapshot: null,
   };
 
   const results = [];
+  let matchesSinceUpdate = 0;
+
+  const makePayload = (status, lastError = null) =>
+    buildPayload({
+      id,
+      query,
+      queryLabel,
+      date,
+      results,
+      status,
+      startedAt: runState.startedAt,
+      totalScanned: stocks.length,
+      processed: runState.processed,
+      errors: runState.errors,
+      force,
+      lastError,
+    });
+
+  const updateLive = (status, lastError = null) => {
+    runState.liveSnapshot = makePayload(status, lastError);
+    return runState.liveSnapshot;
+  };
+
+  const publishLive = async (status, lastError = null, force = false) => {
+    if (!force && matchesSinceUpdate < UPDATE_EVERY_N_MATCHES) return;
+
+    updateLive(status, lastError);
+    await saveScanResult(runState.liveSnapshot);
+    matchesSinceUpdate = 0;
+  };
 
   try {
     await buildBhavcopyHistoryCache({
@@ -149,7 +210,10 @@ export async function runScreener({
       },
     });
 
+    await warmDayCache(historyDays);
+
     runState.phase = 'scan';
+    await publishLive('running', null, true);
 
     for (const stock of stocks) {
       runState.currentSymbol = stock.symbol;
@@ -159,43 +223,37 @@ export async function runScreener({
         if (row.matched) {
           runState.matched += 1;
           results.push(row);
+          matchesSinceUpdate += 1;
+          await publishLive('running');
         }
       } catch (err) {
         runState.processed += 1;
         runState.errors.push({ symbol: stock.symbol, error: err.message });
       }
+    }
 
-      const delayMs = config.screener?.requestDelayMs ?? 50;
-      if (delayMs > 0) await sleep(delayMs);
+    if (matchesSinceUpdate > 0) {
+      await publishLive('running', null, true);
     }
 
     results.sort((a, b) => a.symbol.localeCompare(b.symbol));
-
-    const payload = {
-      queryId: id,
-      query,
-      queryLabel,
-      logic: query.logic,
-      universe: query.universe,
-      date,
-      startedAt: runState.startedAt,
-      completedAt: new Date().toISOString(),
-      totalScanned: stocks.length,
-      matchedCount: results.length,
-      errorCount: runState.errors.length,
-      columns: resultColumnsForQuery(query),
-      stocks: results,
-      errors: runState.errors.slice(0, 100),
-      force,
-    };
-
+    const payload = updateLive('complete');
     await saveScanResult(payload);
     runState.finishedAt = payload.completedAt;
+    runState.status = 'complete';
     return payload;
+  } catch (err) {
+    runState.lastError = err.message;
+    runState.status = 'failed';
+    results.sort((a, b) => a.symbol.localeCompare(b.symbol));
+    const payload = updateLive('failed', err.message);
+    await saveScanResult(payload);
+    throw err;
   } finally {
     runState.running = false;
     runState.currentSymbol = null;
     runState.phase = null;
+    clearDayCache();
   }
 }
 
@@ -208,4 +266,12 @@ export async function startScreenerAsync(options = {}) {
   return { started: true, status: getRunStatus(), promise };
 }
 
-export { getNestedValue };
+export function getNestedValue(obj, keyPath) {
+  const parts = keyPath.split('.');
+  let cur = obj;
+  for (const p of parts) {
+    if (cur == null) return null;
+    cur = cur[p];
+  }
+  return cur;
+}

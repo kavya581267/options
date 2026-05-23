@@ -193,6 +193,36 @@ export async function buildBhavcopyHistoryCache({
   return { dates, errors };
 }
 
+/** In-memory cache so each bhav day is read once per scan, not per stock. */
+const memoryDayCache = new Map();
+
+export function clearDayCache() {
+  memoryDayCache.clear();
+}
+
+export async function warmDayCache(days = 70) {
+  clearDayCache();
+  const dates = getRecentTradingDates(days);
+  for (const dateStr of dates) {
+    for (const exchange of ['NSE', 'BSE']) {
+      try {
+        const day = await ensureBhavcopyDay(exchange, dateStr);
+        memoryDayCache.set(`${exchange}:${dateStr}`, day);
+      } catch {
+        /* skip missing days */
+      }
+    }
+  }
+}
+
+async function getDayCached(exchange, dateStr) {
+  const key = `${exchange}:${dateStr}`;
+  if (memoryDayCache.has(key)) return memoryDayCache.get(key);
+  const day = await ensureBhavcopyDay(exchange, dateStr);
+  memoryDayCache.set(key, day);
+  return day;
+}
+
 export async function getSeries(symbol, exchanges, days = 70) {
   const sym = symbol.toUpperCase();
   const preferNse = exchanges?.includes('NSE');
@@ -206,7 +236,7 @@ export async function getSeries(symbol, exchanges, days = 70) {
 
     for (const dateStr of dates) {
       try {
-        const day = await ensureBhavcopyDay(exchange, dateStr);
+        const day = await getDayCached(exchange, dateStr);
         const entry = day.symbols?.[sym];
         if (entry?.close > 0) {
           closes.push(entry.close);

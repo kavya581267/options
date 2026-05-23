@@ -66,7 +66,7 @@ export const config = {
   },
   screener: {
     defaultUniverse: process.env.SCREENER_UNIVERSE || 'all',
-    requestDelayMs: parseInt(process.env.SCREENER_DELAY_MS || '50', 10),
+    requestDelayMs: parseInt(process.env.SCREENER_DELAY_MS || '0', 10),
     autoRun: process.env.SCREENER_AUTO_RUN !== 'false',
     autoRunTime: process.env.SCREENER_AUTO_RUN_TIME || '16:00',
   },
