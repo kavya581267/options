@@ -38,6 +38,8 @@ const BASE_COLUMNS = [
   { key: 'close', label: 'Close', numeric: true },
 ];
 
+const PAGE_SIZE_OPTIONS = [25, 50, 100];
+
 export default function ScreenerPage() {
   const [catalog, setCatalog] = useState([]);
   const [presets, setPresets] = useState([]);
@@ -54,6 +56,8 @@ export default function ScreenerPage() {
   const [status, setStatus] = useState(null);
   const [sortKey, setSortKey] = useState('symbol');
   const [sortDir, setSortDir] = useState('asc');
+  const [page, setPage] = useState(1);
+  const [pageSize, setPageSize] = useState(50);
   const [selected, setSelected] = useState(null);
   const [details, setDetails] = useState(null);
   const [detailsLoading, setDetailsLoading] = useState(false);
@@ -207,6 +211,25 @@ export default function ScreenerPage() {
     return rows;
   }, [stocks, sortKey, sortDir]);
 
+  const totalPages = Math.max(1, Math.ceil(sorted.length / pageSize));
+  const currentPage = Math.min(page, totalPages);
+
+  const paginatedRows = useMemo(() => {
+    const start = (currentPage - 1) * pageSize;
+    return sorted.slice(start, start + pageSize);
+  }, [sorted, currentPage, pageSize]);
+
+  const rangeStart = sorted.length === 0 ? 0 : (currentPage - 1) * pageSize + 1;
+  const rangeEnd = Math.min(currentPage * pageSize, sorted.length);
+
+  useEffect(() => {
+    setPage(1);
+  }, [date, queryId, sortKey, sortDir, pageSize]);
+
+  useEffect(() => {
+    if (page > totalPages) setPage(totalPages);
+  }, [page, totalPages]);
+
   const handleSort = (key) => {
     if (sortKey === key) {
       setSortDir((d) => (d === 'asc' ? 'desc' : 'asc'));
@@ -221,6 +244,7 @@ export default function ScreenerPage() {
     setError(null);
     setStocks([]);
     setMeta(null);
+    setPage(1);
     const scanDate = todayIST();
     setDate(scanDate);
     try {
@@ -459,6 +483,7 @@ export default function ScreenerPage() {
       {loading && !scanning ? (
         <div className="loading">Loading results…</div>
       ) : sorted.length > 0 ? (
+        <>
         <div className="screener-table-wrap">
           <table className="screener-table">
             <thead>
@@ -474,7 +499,7 @@ export default function ScreenerPage() {
               </tr>
             </thead>
             <tbody>
-              {sorted.map((row) => (
+              {paginatedRows.map((row) => (
                 <tr
                   key={row.symbol}
                   className={selected?.symbol === row.symbol ? 'selected' : ''}
@@ -499,6 +524,49 @@ export default function ScreenerPage() {
             </tbody>
           </table>
         </div>
+
+        <div className="screener-pagination">
+          <span className="screener-pagination-range">
+            Showing {rangeStart}–{rangeEnd} of {sorted.length}
+          </span>
+
+          <label className="screener-pagination-size">
+            Rows
+            <select
+              value={pageSize}
+              onChange={(e) => setPageSize(Number(e.target.value))}
+            >
+              {PAGE_SIZE_OPTIONS.map((size) => (
+                <option key={size} value={size}>
+                  {size}
+                </option>
+              ))}
+            </select>
+          </label>
+
+          <div className="screener-pagination-nav">
+            <button
+              type="button"
+              className="btn-secondary"
+              disabled={currentPage <= 1}
+              onClick={() => setPage((p) => Math.max(1, p - 1))}
+            >
+              Previous
+            </button>
+            <span className="screener-pagination-page">
+              Page {currentPage} of {totalPages}
+            </span>
+            <button
+              type="button"
+              className="btn-secondary"
+              disabled={currentPage >= totalPages}
+              onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
+            >
+              Next
+            </button>
+          </div>
+        </div>
+        </>
       ) : null}
 
       {selected && (
