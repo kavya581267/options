@@ -8,6 +8,7 @@ import { fyersStrategies } from './trading/fyersStrategies.js';
 import { startScheduler } from './scheduler.js';
 import { startKotakScheduler } from './kotakScheduler.js';
 import { startFyersScheduler } from './fyersScheduler.js';
+import { startScreenerScheduler } from './screenerScheduler.js';
 import apiRouter from './routes/api.js';
 
 await loadTradingConfig();
@@ -37,6 +38,14 @@ try {
   console.warn('[fyers] routes not loaded:', err.message);
 }
 
+try {
+  const { default: screenerRouter } = await import('./routes/screener.js');
+  app.use('/api/screener', screenerRouter);
+  console.log('Stock screener API: /api/screener');
+} catch (err) {
+  console.warn('[screener] routes not loaded:', err.message);
+}
+
 const server = app.listen(config.port, () => {
   console.log(`Server running on http://localhost:${config.port}`);
   console.log(`Data directory: ${config.dataDir}`);
@@ -48,6 +57,7 @@ const server = app.listen(config.port, () => {
   startFyersScheduler().catch((err) => {
     console.warn('[fyers-scheduler] failed to start:', err.message);
   });
+  startScreenerScheduler();
 });
 
 server.on('error', (err) => {

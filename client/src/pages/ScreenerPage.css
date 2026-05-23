@@ -1,0 +1,218 @@
+.screener-controls {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1rem;
+  align-items: flex-end;
+  margin-bottom: 1.25rem;
+  padding: 1rem;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+}
+
+.screener-controls label {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--muted);
+}
+
+.screener-controls select {
+  font-family: inherit;
+  font-size: 0.9rem;
+  padding: 0.45rem 0.65rem;
+  border-radius: 8px;
+  border: 1px solid var(--border);
+  background: var(--surface-2);
+  color: var(--text);
+  min-width: 180px;
+}
+
+.screener-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem 1.25rem;
+  margin-left: auto;
+  font-size: 0.85rem;
+  color: var(--muted);
+}
+
+.screener-progress {
+  margin-bottom: 1rem;
+  padding: 1rem;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+}
+
+.screener-progress-bar {
+  height: 8px;
+  background: var(--surface-2);
+  border-radius: 999px;
+  overflow: hidden;
+  margin-bottom: 0.5rem;
+}
+
+.screener-progress-bar > div {
+  height: 100%;
+  background: var(--accent);
+  transition: width 0.3s ease;
+}
+
+.screener-table-wrap {
+  overflow-x: auto;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  background: var(--surface);
+}
+
+.screener-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.875rem;
+}
+
+.screener-table th,
+.screener-table td {
+  padding: 0.65rem 0.85rem;
+  text-align: left;
+  border-bottom: 1px solid var(--border);
+}
+
+.screener-table th button {
+  font: inherit;
+  font-weight: 600;
+  color: var(--muted);
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 0;
+}
+
+.screener-table th button:hover {
+  color: var(--text);
+}
+
+.screener-table tbody tr {
+  cursor: pointer;
+  transition: background 0.12s;
+}
+
+.screener-table tbody tr:hover {
+  background: var(--surface-2);
+}
+
+.screener-table tbody tr.selected {
+  background: var(--accent-dim);
+}
+
+.screener-table td.positive {
+  color: var(--green);
+}
+
+.screener-detail-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.65);
+  display: flex;
+  justify-content: flex-end;
+  z-index: 100;
+}
+
+.screener-detail-panel {
+  width: min(520px, 100%);
+  height: 100%;
+  background: var(--bg);
+  border-left: 1px solid var(--border);
+  overflow-y: auto;
+  padding: 1.25rem;
+}
+
+.screener-detail-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 1rem;
+  margin-bottom: 1.25rem;
+}
+
+.screener-detail-header h2 {
+  font-size: 1.35rem;
+}
+
+.screener-detail-header p {
+  color: var(--muted);
+  font-size: 0.9rem;
+}
+
+.screener-detail-body section {
+  margin-bottom: 1.5rem;
+}
+
+.screener-detail-body h3 {
+  font-size: 0.95rem;
+  margin-bottom: 0.65rem;
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.detail-grid {
+  display: grid;
+  grid-template-columns: 120px 1fr;
+  gap: 0.45rem 0.75rem;
+  font-size: 0.875rem;
+}
+
+.detail-grid dt {
+  color: var(--muted);
+}
+
+.detail-grid a {
+  color: var(--accent);
+}
+
+.screener-mini-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.8rem;
+}
+
+.screener-mini-table th,
+.screener-mini-table td {
+  padding: 0.4rem 0.5rem;
+  border-bottom: 1px solid var(--border);
+  text-align: left;
+}
+
+.detail-list {
+  list-style: none;
+  font-size: 0.85rem;
+}
+
+.detail-list li {
+  padding: 0.5rem 0;
+  border-bottom: 1px solid var(--border);
+}
+
+.detail-date {
+  display: block;
+  font-size: 0.75rem;
+  color: var(--muted);
+  margin-bottom: 0.15rem;
+}
+
+.hint {
+  color: var(--muted);
+  font-size: 0.85rem;
+  margin-top: 0.35rem;
+}
+
+.empty,
+.loading {
+  padding: 2rem;
+  text-align: center;
+  color: var(--muted);
+}

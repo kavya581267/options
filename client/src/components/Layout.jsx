@@ -25,6 +25,9 @@ export default function Layout() {
         <NavLink to="/fyers" className={({ isActive }) => (isActive ? 'active' : '')}>
           Fyers
         </NavLink>
+        <NavLink to="/screener" className={({ isActive }) => (isActive ? 'active' : '')}>
+          Stock Screener
+        </NavLink>
       </nav>
       <Outlet />
     </div>
