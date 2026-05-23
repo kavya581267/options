@@ -1,7 +1,6 @@
 import { getUniverse } from './universe.js';
 import { saveScanResult, todayDateStr } from './screenerStorage.js';
 import {
-  buildBhavcopyHistoryCache,
   getSeries,
   warmDayCache,
   clearDayCache,
@@ -15,6 +14,7 @@ import {
 } from './indicators/registry.js';
 
 const UPDATE_EVERY_N_MATCHES = 20;
+const YIELD_EVERY_N_STOCKS = 50;
 
 let runState = {
   running: false,
@@ -203,14 +203,11 @@ export async function runScreener({
   };
 
   try {
-    await buildBhavcopyHistoryCache({
-      days: historyDays,
+    await warmDayCache(historyDays, {
       onProgress: (p) => {
         runState.cacheProgress = p;
       },
     });
-
-    await warmDayCache(historyDays);
 
     runState.phase = 'scan';
     await publishLive('running', null, true);
@@ -225,6 +222,9 @@ export async function runScreener({
           results.push(row);
           matchesSinceUpdate += 1;
           await publishLive('running');
+        }
+        if (runState.processed % YIELD_EVERY_N_STOCKS === 0) {
+          await new Promise((resolve) => setImmediate(resolve));
         }
       } catch (err) {
         runState.processed += 1;

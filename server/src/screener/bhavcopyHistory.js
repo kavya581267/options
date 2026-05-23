@@ -195,24 +195,50 @@ export async function buildBhavcopyHistoryCache({
 
 /** In-memory cache so each bhav day is read once per scan, not per stock. */
 const memoryDayCache = new Map();
+/** Pre-built close/volume series per symbol+exchange for O(1) lookups during scan. */
+const symbolSeriesCache = new Map();
 
 export function clearDayCache() {
   memoryDayCache.clear();
+  symbolSeriesCache.clear();
 }
 
-export async function warmDayCache(days = 70) {
+export async function warmDayCache(days = 70, { onProgress } = {}) {
   clearDayCache();
-  const dates = getRecentTradingDates(days);
+  await refreshStaleCacheFiles();
+
+  const dates = getRecentTradingDates(days).reverse();
+  const exchanges = ['NSE', 'BSE'];
+  const total = dates.length * exchanges.length;
+  let done = 0;
+  const errors = [];
+
   for (const dateStr of dates) {
-    for (const exchange of ['NSE', 'BSE']) {
+    for (const exchange of exchanges) {
       try {
         const day = await ensureBhavcopyDay(exchange, dateStr);
         memoryDayCache.set(`${exchange}:${dateStr}`, day);
-      } catch {
-        /* skip missing days */
+
+        for (const [sym, entry] of Object.entries(day.symbols)) {
+          if (!(entry?.close > 0)) continue;
+          const key = `${sym}:${exchange}`;
+          let series = symbolSeriesCache.get(key);
+          if (!series) {
+            series = { closes: [], volumes: [] };
+            symbolSeriesCache.set(key, series);
+          }
+          series.closes.push(entry.close);
+          series.volumes.push(entry.volume > 0 ? entry.volume : 0);
+        }
+      } catch (err) {
+        errors.push({ exchange, date: dateStr, error: err.message });
       }
+      done += 1;
+      onProgress?.({ done, total, date: dateStr, exchange });
     }
   }
+
+  return { dates: getRecentTradingDates(days), errors };
 }
 
 async function getDayCached(exchange, dateStr) {
@@ -224,6 +250,26 @@ async function getDayCached(exchange, dateStr) {
 }
 
 export async function getSeries(symbol, exchanges, days = 70) {
+  const sym = symbol.toUpperCase();
+  const preferNse = exchanges?.includes('NSE');
+  const preferBse = exchanges?.includes('BSE');
+  const order = preferNse ? ['NSE', 'BSE'] : preferBse ? ['BSE', 'NSE'] : ['NSE', 'BSE'];
+
+  for (const exchange of order) {
+    const series = symbolSeriesCache.get(`${sym}:${exchange}`);
+    if (series?.closes.length >= 20) {
+      return { closes: series.closes, volumes: series.volumes, exchange };
+    }
+  }
+
+  if (symbolSeriesCache.size === 0) {
+    return getSeriesFromDays(symbol, exchanges, days);
+  }
+
+  return { closes: [], volumes: [], exchange: null };
+}
+
+async function getSeriesFromDays(symbol, exchanges, days = 70) {
   const sym = symbol.toUpperCase();
   const preferNse = exchanges?.includes('NSE');
   const preferBse = exchanges?.includes('BSE');
