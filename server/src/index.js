@@ -39,6 +39,14 @@ try {
 }
 
 try {
+  const { default: breakoutRouter } = await import('./routes/breakoutScreener.js');
+  app.use('/api/breakout-screener', breakoutRouter);
+  console.log('Breakout screener API: /api/breakout-screener');
+} catch (err) {
+  console.warn('[breakout-screener] routes not loaded:', err.message);
+}
+
+try {
   const { default: screenerRouter } = await import('./routes/screener.js');
   app.use('/api/screener', screenerRouter);
   console.log('Stock screener API: /api/screener');

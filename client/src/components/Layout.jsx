@@ -28,6 +28,9 @@ export default function Layout() {
         <NavLink to="/screener" className={({ isActive }) => (isActive ? 'active' : '')}>
           Stock Screener
         </NavLink>
+        <NavLink to="/breakout-screener" className={({ isActive }) => (isActive ? 'active' : '')}>
+          Breakout Screener
+        </NavLink>
       </nav>
       <Outlet />
     </div>

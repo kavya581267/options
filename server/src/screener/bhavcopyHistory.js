@@ -2,6 +2,7 @@ import fs from 'fs/promises';
 import path from 'path';
 import { config } from '../config.js';
 import { getNseClient, getBseClient } from './exchangeClients.js';
+import { loadNseDeliveryMap, mergeDeliveryIntoSymbols } from './deliveryBhav.js';
 
 const NON_EQUITY_SERIES = new Set(['GB', 'GS', 'TB', 'MF']);
 
@@ -42,11 +43,18 @@ function isBseEquityRow(row) {
 }
 
 function rowToEntry(row) {
+  const close = Number(row.ClsPric ?? row.LastPric ?? row.close ?? 0);
   return {
-    symbol: String(row.TckrSymb || '').toUpperCase(),
-    close: Number(row.ClsPric ?? row.LastPric ?? 0),
-    volume: Number(row.TtlTradgVol ?? 0),
-    name: row.FinInstrmNm || row.TckrSymb,
+    symbol: String(row.TckrSymb || row.symbol || '').toUpperCase(),
+    open: Number(row.OpnPric ?? row.open ?? close),
+    high: Number(row.HghPric ?? row.high ?? close),
+    low: Number(row.LwPric ?? row.low ?? close),
+    close,
+    volume: Number(row.TtlTradgVol ?? row.volume ?? 0),
+    trades: Number(row.TtlNbOfTxsExctd ?? row.trades ?? 0),
+    delivery_qty: Number(row.DlvrbleQty ?? row.delivery_qty ?? row.DELIV_QTY ?? 0),
+    delivery_pct: Number(row.DlvrbleQtyPct ?? row.delivery_pct ?? row.DELIV_PER ?? 0),
+    name: row.FinInstrmNm || row.TckrSymb || row.symbol,
     isin: row.ISIN || null,
     series: row.SctySrs || null,
     scripCode: row.FinInstrmId ? String(row.FinInstrmId) : null,
@@ -102,11 +110,23 @@ async function downloadBhavcopyFile(exchange, dateStr) {
   return bse.bhavcopyReport(date);
 }
 
-function cacheNeedsVolumeRefresh(payload) {
+function cacheNeedsRefresh(payload) {
   if (!payload?.symbols || !Object.keys(payload.symbols).length) return false;
-  if (payload.cacheVersion >= 2) return false;
-  const sample = Object.values(payload.symbols).slice(0, 20);
-  return sample.every((entry) => !(entry.volume > 0));
+
+  const version = payload.cacheVersion || 0;
+  if (version >= 4) return false;
+
+  const sample = Object.values(payload.symbols).slice(0, 50);
+  const missingVolume = sample.every((entry) => !(entry.volume > 0));
+  const missingOhlc = sample.every((entry) => !(entry.open > 0 && entry.high > 0));
+  if (missingVolume || missingOhlc || version < 3) return true;
+
+  if (payload.exchange === 'NSE' && version < 4) {
+    const hasDelivery = sample.some((entry) => entry.delivery_pct > 0);
+    return !hasDelivery;
+  }
+
+  return false;
 }
 
 async function refreshStaleCacheFiles() {
@@ -118,7 +138,7 @@ async function refreshStaleCacheFiles() {
         const fp = path.join(dir, file);
         try {
           const cached = JSON.parse(await fs.readFile(fp, 'utf-8'));
-          if (cacheNeedsVolumeRefresh(cached)) {
+          if (cacheNeedsRefresh(cached)) {
             await fs.unlink(fp);
           }
         } catch {
@@ -137,7 +157,7 @@ export async function ensureBhavcopyDay(exchange, dateStr) {
     await fs.access(fp);
     const raw = await fs.readFile(fp, 'utf-8');
     const cached = JSON.parse(raw);
-    if (!cacheNeedsVolumeRefresh(cached)) {
+    if (!cacheNeedsRefresh(cached)) {
       return cached;
     }
     await fs.unlink(fp);
@@ -152,12 +172,17 @@ export async function ensureBhavcopyDay(exchange, dateStr) {
     throw new Error(`${exchange} bhavcopy ${dateStr}: ${err.message}`);
   }
 
-  const symbols = await parseBhavcopyFile(filePath, exchange);
+  let symbols = await parseBhavcopyFile(filePath, exchange);
+  if (exchange === 'NSE') {
+    const deliveryMap = await loadNseDeliveryMap(dateStr);
+    symbols = mergeDeliveryIntoSymbols(symbols, deliveryMap);
+  }
+
   const payload = {
     exchange,
     date: dateStr,
     symbolCount: Object.keys(symbols).length,
-    cacheVersion: 2,
+    cacheVersion: exchange === 'NSE' ? 4 : 3,
     symbols,
   };
 

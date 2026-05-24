@@ -1,6 +1,8 @@
 import { getNseClient, getBseClient } from './exchangeClients.js';
 import { findStock } from './universe.js';
 import { getSymbolHistory } from './screenerStorage.js';
+import { getSeries } from './bhavcopyHistory.js';
+import { loadSharesMap, getMarketCapCr } from './sharesOutstanding.js';
 
 export async function fetchStockDetails(symbol, queryIdValue = null) {
   const sym = symbol.toUpperCase();
@@ -16,7 +18,8 @@ export async function fetchStockDetails(symbol, queryIdValue = null) {
     symbol: sym,
     name: stock.name,
     exchanges: stock.exchanges || [stock.exchange],
-    marketCap: stock.marketCap ?? null,
+    marketCap: null,
+    marketCapCr: null,
     faceValue: stock.faceValue ?? null,
     isin: stock.isin ?? null,
     industry: stock.industry ?? null,
@@ -90,5 +93,16 @@ export async function fetchStockDetails(symbol, queryIdValue = null) {
   details.scanHistory = queryIdValue
     ? await getSymbolHistory(sym, queryIdValue)
     : [];
+
+  try {
+    const sharesMap = await loadSharesMap();
+    const { closes } = await getSeries(sym, stock.exchanges, 5);
+    const close = closes.at(-1);
+    details.marketCapCr = getMarketCapCr(sharesMap, sym, close);
+    details.marketCap = details.marketCapCr;
+  } catch {
+    /* optional */
+  }
+
   return details;
 }

@@ -1,0 +1,112 @@
+.breakout-filters {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.breakout-filter-group {
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 0.75rem 1rem;
+  margin: 0;
+  background: var(--surface-2);
+}
+
+.breakout-filter-group legend {
+  font-size: 0.75rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--muted);
+  padding: 0 0.35rem;
+}
+
+.breakout-filter-checks {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.65rem 1.25rem;
+  margin-top: 0.5rem;
+}
+
+.breakout-filter-check {
+  display: flex;
+  align-items: center;
+  gap: 0.45rem;
+  font-size: 0.875rem;
+  cursor: pointer;
+}
+
+.breakout-filter-check input[type='checkbox'] {
+  accent-color: var(--accent);
+}
+
+.breakout-filter-threshold {
+  width: 4rem;
+  font-family: inherit;
+  font-size: 0.8rem;
+  padding: 0.2rem 0.4rem;
+  border-radius: 6px;
+  border: 1px solid var(--border);
+  background: var(--surface);
+  color: var(--text);
+}
+
+.breakout-sector-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+  margin-top: 0.5rem;
+}
+
+.sector-chip {
+  font-family: inherit;
+  font-size: 0.75rem;
+  font-weight: 600;
+  padding: 0.3rem 0.6rem;
+  border-radius: 999px;
+  border: 1px solid var(--border);
+  background: var(--surface);
+  color: var(--muted);
+  cursor: pointer;
+}
+
+.sector-chip:hover {
+  border-color: var(--accent);
+  color: var(--text);
+}
+
+.sector-chip.active.include {
+  background: var(--accent-dim);
+  border-color: #3b82f655;
+  color: var(--accent);
+}
+
+.sector-chip.active.exclude {
+  background: #ef444422;
+  border-color: #ef444444;
+  color: #fca5a5;
+}
+
+.breakout-filter-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.active-filters-banner {
+  font-size: 0.8rem;
+  color: var(--muted);
+  margin-top: 0.5rem;
+  line-height: 1.5;
+}
+
+.active-filters-banner strong {
+  color: var(--text);
+}
+
+@media (max-width: 640px) {
+  .breakout-filter-checks {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+}

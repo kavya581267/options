@@ -4,6 +4,7 @@ import TrackerPage from './pages/TrackerPage';
 import KotakPage from './pages/KotakPage';
 import FyersPage from './pages/FyersPage';
 import ScreenerPage from './pages/ScreenerPage';
+import BreakoutScreenerPage from './pages/BreakoutScreenerPage';
 import './App.css';
 
 export default function App() {
@@ -15,6 +16,7 @@ export default function App() {
           <Route path="kotak" element={<KotakPage />} />
           <Route path="fyers" element={<FyersPage />} />
           <Route path="screener" element={<ScreenerPage />} />
+          <Route path="breakout-screener" element={<BreakoutScreenerPage />} />
         </Route>
       </Routes>
     </BrowserRouter>

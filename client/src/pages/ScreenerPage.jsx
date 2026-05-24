@@ -32,11 +32,19 @@ function formatNum(n, digits = 2) {
   });
 }
 
+function formatMarketCapCr(cr) {
+  if (cr == null || Number.isNaN(cr)) return '—';
+  if (cr >= 100000) return `${(cr / 100000).toFixed(2)}L Cr`;
+  if (cr >= 100) return `${(cr / 100).toFixed(2)}K Cr`;
+  return `${Number(cr).toLocaleString('en-IN', { maximumFractionDigits: 0 })} Cr`;
+}
+
 const BASE_COLUMNS = [
   { key: 'symbol', label: 'Symbol' },
   { key: 'name', label: 'Name' },
   { key: 'exchange', label: 'Exchange' },
   { key: 'close', label: 'Close', numeric: true },
+  { key: 'market_cap_cr', label: 'Mkt Cap (Cr)', numeric: true },
 ];
 
 const PAGE_SIZE_OPTIONS = [25, 50, 100];
@@ -193,6 +201,15 @@ export default function ScreenerPage() {
   const getCellValue = (row, key) => {
     if (key.includes('.')) return getMetricValue(row, key);
     return row[key];
+  };
+
+  const formatCell = (row, col) => {
+    const value = getCellValue(row, col.key);
+    if (col.key === 'market_cap_cr') return formatMarketCapCr(value);
+    if (col.numeric) {
+      return `${formatNum(value)}${col.key.includes('pct') ? '%' : ''}`;
+    }
+    return value ?? '—';
   };
 
   const sorted = useMemo(() => {
@@ -528,9 +545,7 @@ export default function ScreenerPage() {
                           : ''
                       }`}
                     >
-                      {col.numeric
-                        ? `${formatNum(getCellValue(row, col.key))}${col.key.includes('pct') ? '%' : ''}`
-                        : getCellValue(row, col.key) ?? '—'}
+                      {formatCell(row, col)}
                     </td>
                   ))}
                 </tr>
@@ -625,6 +640,8 @@ export default function ScreenerPage() {
                   <dl className="detail-grid">
                     <dt>Exchanges</dt>
                     <dd>{details.exchanges?.join(', ')}</dd>
+                    <dt>Market cap</dt>
+                    <dd>{formatMarketCapCr(selected.market_cap_cr ?? details.marketCapCr)}</dd>
                     <dt>ISIN</dt>
                     <dd>{details.isin || '—'}</dd>
                     <dt>Industry</dt>

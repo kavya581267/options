@@ -5,6 +5,7 @@ import {
   warmDayCache,
   clearDayCache,
 } from './bhavcopyHistory.js';
+import { loadSharesMap, getMarketCapCr } from './sharesOutstanding.js';
 import { normalizeQuery, queryId } from './query.js';
 import {
   buildQueryLabel,
@@ -80,7 +81,7 @@ function buildPayload({
   };
 }
 
-async function analyzeStock(stock, query) {
+async function analyzeStock(stock, query, sharesMap) {
   const historyDays = requiredHistoryDays(query);
   const series = await getSeries(stock.symbol, stock.exchanges, historyDays);
 
@@ -124,6 +125,7 @@ async function analyzeStock(stock, query) {
     exchange: stock.exchanges?.join(', ') || stock.exchange,
     exchanges: stock.exchanges || [stock.exchange],
     close,
+    market_cap_cr: getMarketCapCr(sharesMap, stock.symbol, close),
     dataSource: ctx.dataSource,
     isin: stock.isin ?? null,
     bseScripCode: stock.bseScripCode ?? null,
@@ -210,12 +212,13 @@ export async function runScreener({
     });
 
     runState.phase = 'scan';
+    const sharesMap = await loadSharesMap(date);
     await publishLive('running', null, true);
 
     for (const stock of stocks) {
       runState.currentSymbol = stock.symbol;
       try {
-        const row = await analyzeStock(stock, query);
+        const row = await analyzeStock(stock, query, sharesMap);
         runState.processed += 1;
         if (row.matched) {
           runState.matched += 1;
