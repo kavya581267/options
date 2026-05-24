@@ -7,101 +7,22 @@
   margin-bottom: 1rem;
 }
 
-.screener-section {
-  margin-bottom: 0.85rem;
-  border: 1px solid var(--border);
-  border-radius: 12px;
-  background: var(--surface);
-  overflow: hidden;
-}
-
-.screener-section-toggle {
-  width: 100%;
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 0.35rem 0.65rem;
-  padding: 0.85rem 1rem;
-  background: var(--surface-2);
-  border: none;
-  color: var(--text);
-  font: inherit;
-  text-align: left;
-  cursor: pointer;
-  transition: background 0.15s;
-}
-
-.screener-section-toggle:hover {
-  background: var(--surface);
-}
-
-.screener-section-chevron {
-  font-size: 0.65rem;
-  color: var(--muted);
-  flex-shrink: 0;
-  width: 0.75rem;
-}
-
-.screener-section-title {
-  font-weight: 700;
-  font-size: 0.95rem;
-}
-
-.screener-section-subtitle {
-  font-size: 0.8rem;
-  color: var(--muted);
-}
-
-.screener-section-badge {
-  margin-left: auto;
-  font-size: 0.75rem;
-  font-weight: 600;
-  color: var(--accent);
-  padding: 0.15rem 0.55rem;
-  border-radius: 999px;
-  background: var(--accent-dim);
-  border: 1px solid #3b82f644;
-}
-
-.screener-section-body {
-  padding: 1rem;
-  border-top: 1px solid var(--border);
-}
-
-.screener-section-body > :last-child {
-  margin-bottom: 0;
-}
-
-.screener-section-body .indicator-builder,
-.screener-section-body .screener-controls-inset,
-.screener-section-body .screener-progress-inset {
-  margin-bottom: 0;
-  padding: 0;
-  background: transparent;
-  border: none;
-  border-radius: 0;
-}
-
-.screener-section-body .query-label-banner {
-  margin-bottom: 0;
-}
-
-.screener-section-body .strategy-description {
-  margin-top: 0.75rem;
-  margin-bottom: 0.75rem;
-}
-
-.screener-detail-section {
-  margin-bottom: 0.65rem;
-}
-
-.screener-detail-section .screener-section-toggle {
+.screener-detail-section .collapsible-section-toggle {
   padding: 0.65rem 0.85rem;
   font-size: 0.9rem;
 }
 
-.screener-detail-section .screener-section-body {
+.screener-detail-section .collapsible-section-body {
   padding: 0.75rem 0.85rem;
+}
+
+.collapsible-section-body .query-label-banner {
+  margin-bottom: 0;
+}
+
+.collapsible-section-body .strategy-description {
+  margin-top: 0.75rem;
+  margin-bottom: 0.75rem;
 }
 
 .screener-controls {
@@ -424,11 +345,6 @@
     margin-left: 0;
     width: 100%;
   }
-
-  .screener-section-subtitle {
-    width: 100%;
-    margin-left: 1.4rem;
-  }
 }
 
 @media (max-width: 640px) {
@@ -443,14 +359,6 @@
 
   .screener-header .header-actions .btn-secondary {
     width: 100%;
-  }
-
-  .screener-section-toggle {
-    padding: 0.75rem 0.85rem;
-  }
-
-  .screener-section-badge {
-    margin-left: 1.4rem;
   }
 
   .screener-controls {

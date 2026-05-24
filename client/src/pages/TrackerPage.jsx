@@ -5,9 +5,11 @@ import {
   fetchHealth,
   triggerFetch,
 } from '../api';
+import CollapsibleSection from '../components/CollapsibleSection';
 import Filters from '../components/Filters';
 import DayStats from '../components/DayStats';
 import StraddleChart from '../components/StraddleChart';
+import './TrackerPage.css';
 
 const SYMBOLS = ['NIFTY', 'SENSEX'];
 
@@ -115,8 +117,8 @@ export default function TrackerPage() {
   const anchorSpot = anchor?.spot ?? stats?.anchorSpot;
 
   return (
-    <>
-      <header className="header">
+    <div className="tracker-page">
+      <header className="header tracker-header">
         <div>
           <h1>Straddle Tracker</h1>
           <p className="subtitle">
@@ -139,57 +141,71 @@ export default function TrackerPage() {
         </div>
       </header>
 
-      <Filters
-        symbols={SYMBOLS}
-        symbol={symbol}
-        onSymbolChange={setSymbol}
-        date={date}
-        onDateChange={setDate}
-        dates={dates}
-        timeFrom={timeFrom}
-        timeTo={timeTo}
-        onTimeFromChange={setTimeFrom}
-        onTimeToChange={setTimeTo}
-      />
+      <CollapsibleSection title="Filters" defaultOpen subtitle={`${symbol} · ${date}`}>
+        <Filters
+          symbols={SYMBOLS}
+          symbol={symbol}
+          onSymbolChange={setSymbol}
+          date={date}
+          onDateChange={setDate}
+          dates={dates}
+          timeFrom={timeFrom}
+          timeTo={timeTo}
+          onTimeFromChange={setTimeFrom}
+          onTimeToChange={setTimeTo}
+        />
+      </CollapsibleSection>
 
       {error && <div className="error-banner">{error}</div>}
 
-      <DayStats
-        stats={filteredStats}
-        symbol={symbol}
-        date={date}
-        anchor={anchor}
-      />
-
-      {symbol === 'SENSEX' && !anchor && date === todayIST() && (
-        <p className="warn-banner">
-          SENSEX needs Kotak login (TOTP + MPIN on the Kotak page). BSE data is
-          blocked — use Fetch now during market hours to set today&apos;s anchor
-          from current quotes.
-        </p>
-      )}
-
-      {loading ? (
-        <div className="loading">Loading data…</div>
-      ) : filtered.length === 0 ? (
-        <div className="empty">
-          <p>
-            No readings for {symbol} on {date}.
-          </p>
-          <p className="hint">
-            Anchor is set at 9:15 IST (or on first successful fetch after 9:20).
-            Then straddle premium is recorded every minute until 15:30. Click
-            Fetch now to capture from current market data.
-          </p>
-        </div>
-      ) : (
-        <StraddleChart
-          data={filtered}
+      <CollapsibleSection
+        title="Day statistics"
+        defaultOpen
+        badge={filteredStats?.count ? `${filteredStats.count} readings` : undefined}
+      >
+        <DayStats
+          stats={filteredStats}
           symbol={symbol}
-          anchorStrike={anchorStrike}
-          anchorSpot={anchorSpot}
+          date={date}
+          anchor={anchor}
         />
-      )}
-    </>
+
+        {symbol === 'SENSEX' && !anchor && date === todayIST() && (
+          <p className="warn-banner tracker-warn">
+            SENSEX needs Kotak login (TOTP + MPIN on the Kotak page). BSE data is
+            blocked — use Fetch now during market hours to set today&apos;s anchor
+            from current quotes.
+          </p>
+        )}
+      </CollapsibleSection>
+
+      <CollapsibleSection
+        title="Straddle chart"
+        defaultOpen
+        badge={filtered.length ? `${filtered.length} points` : undefined}
+      >
+        {loading ? (
+          <div className="loading">Loading data…</div>
+        ) : filtered.length === 0 ? (
+          <div className="empty">
+            <p>
+              No readings for {symbol} on {date}.
+            </p>
+            <p className="hint">
+              Anchor is set at 9:15 IST (or on first successful fetch after 9:20).
+              Then straddle premium is recorded every minute until 15:30. Click
+              Fetch now to capture from current market data.
+            </p>
+          </div>
+        ) : (
+          <StraddleChart
+            data={filtered}
+            symbol={symbol}
+            anchorStrike={anchorStrike}
+            anchorSpot={anchorSpot}
+          />
+        )}
+      </CollapsibleSection>
+    </div>
   );
 }

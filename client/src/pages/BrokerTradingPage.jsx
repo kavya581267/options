@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
+import CollapsibleSection from '../components/CollapsibleSection';
 import StrategySidebar from '../components/trading/StrategySidebar';
 import TradingConfigFields from '../components/trading/TradingConfigFields';
 import LiveQuotePanel from '../components/LiveQuotePanel';
@@ -328,17 +329,30 @@ export default function BrokerTradingPage({
         )}
 
       <div className="trading-layout">
-        <StrategySidebar
-          strategies={strategies}
-          activeStrategyId={activeStrategyId}
-          selectedId={selectedId}
-          onSelect={(id) => selectStrategy(id, strategies, activeStrategyId)}
-          onNew={createStrategy}
-          busy={busy}
-        />
+        <CollapsibleSection
+          title="Strategies"
+          defaultOpen
+          className="trading-sidebar-section"
+          badge={strategies.length ? `${strategies.length}` : undefined}
+        >
+          <StrategySidebar
+            strategies={strategies}
+            activeStrategyId={activeStrategyId}
+            selectedId={selectedId}
+            onSelect={(id) => selectStrategy(id, strategies, activeStrategyId)}
+            onNew={createStrategy}
+            busy={busy}
+          />
+        </CollapsibleSection>
 
         <div className="trading-main">
-          {renderSession?.({ loggedIn, busy, run })}
+          <CollapsibleSection
+            title="Login & session"
+            defaultOpen={!loggedIn}
+            badge={loggedIn ? 'Active' : 'Required'}
+          >
+            {renderSession?.({ loggedIn, busy, run })}
+          </CollapsibleSection>
 
           <ScheduleStatusBanner
             schedule={schedule}
@@ -363,7 +377,8 @@ export default function BrokerTradingPage({
             </p>
           )}
 
-          <div className="strategy-header">
+          <CollapsibleSection title="Strategy" defaultOpen subtitle={draft.name}>
+            <div className="strategy-header strategy-header-inset">
             <div className="strategy-header-top">
               <input
                 className="strategy-name-input"
@@ -423,6 +438,7 @@ export default function BrokerTradingPage({
               )}
             </div>
           </div>
+          </CollapsibleSection>
 
           <nav className="tab-nav">
             {['trade', 'setup', 'schedule'].map((id) => (
@@ -444,8 +460,7 @@ export default function BrokerTradingPage({
           </nav>
 
           {tab === 'setup' && (
-            <section className="kotak-section">
-              <h2 className="section-title">Trading parameters</h2>
+            <CollapsibleSection title="Trading parameters" defaultOpen>
               <p className="kotak-hint">
                 Saved with this strategy. Activate the strategy to apply to orders and the
                 scheduler.
@@ -462,10 +477,11 @@ export default function BrokerTradingPage({
                   Save parameters
                 </button>
               </div>
-            </section>
+            </CollapsibleSection>
           )}
 
           {tab === 'schedule' && (
+            <CollapsibleSection title="Schedule" defaultOpen badge={schedule?.enabled ? schedule.entryTime : 'Off'}>
             <SchedulePanel
               brokerName={brokerName}
               activeStrategyName={cfg.activeStrategy?.name}
@@ -493,10 +509,12 @@ export default function BrokerTradingPage({
               }
               onRunNow={() => run(() => api.runScheduleNow(true))}
             />
+            </CollapsibleSection>
           )}
 
           {tab === 'trade' && (
             <>
+              <CollapsibleSection title="Live quote" defaultOpen badge={tradeSymbol}>
               <LiveQuotePanel
                 brokerName={brokerName}
                 loggedIn={loggedIn}
@@ -512,15 +530,15 @@ export default function BrokerTradingPage({
                   busy || quoteLoading || liveLoading || !loggedIn || !strike
                 }
               />
+              </CollapsibleSection>
 
-              <section className="kotak-section">
-                <h2 className="section-title">Execute trade</h2>
-                <p className="kotak-hint">
-                  Uses active strategy config ({cfg.activeStrategy?.name || '—'}). Symbol:{' '}
-                  <strong>{isActive ? symbol : cfg.activeStrategy?.trading?.symbol}</strong>
-                  {!isActive && ' — activate this strategy to trade with its parameters.'}
-                </p>
-                <div className="kotak-row">
+              <CollapsibleSection title="Execute trade" defaultOpen>
+              <p className="kotak-hint">
+                Uses active strategy config ({cfg.activeStrategy?.name || '—'}). Symbol:{' '}
+                <strong>{isActive ? symbol : cfg.activeStrategy?.trading?.symbol}</strong>
+                {!isActive && ' — activate this strategy to trade with its parameters.'}
+              </p>
+              <div className="kotak-row">
                   <label>
                     Symbol
                     <select
@@ -611,7 +629,7 @@ export default function BrokerTradingPage({
                   </button>
                 </div>
                 {monitorMsg && <p className="monitor-msg">{monitorMsg}</p>}
-              </section>
+              </CollapsibleSection>
             </>
           )}
         </div>

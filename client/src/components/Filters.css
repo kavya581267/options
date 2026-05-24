@@ -2,11 +2,11 @@
   display: flex;
   flex-wrap: wrap;
   gap: 1rem 1.25rem;
-  padding: 1rem 1.25rem;
-  background: var(--surface);
-  border: 1px solid var(--border);
-  border-radius: 12px;
-  margin-bottom: 1.25rem;
+  padding: 0;
+  background: transparent;
+  border: none;
+  border-radius: 0;
+  margin-bottom: 0;
 }
 
 .filter-group {
@@ -81,4 +81,26 @@
 .date-arrow:disabled {
   opacity: 0.35;
   cursor: not-allowed;
+}
+
+@media (max-width: 640px) {
+  .filters {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .filter-group {
+    width: 100%;
+    min-width: 0;
+  }
+
+  .filter-group select,
+  .filter-group input {
+    width: 100%;
+  }
+
+  .date-filter {
+    min-width: 0;
+    width: 100%;
+  }
 }

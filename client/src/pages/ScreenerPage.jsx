@@ -14,7 +14,7 @@ import {
   savePreset,
 } from '../api/screener';
 import IndicatorBuilder from '../components/screener/IndicatorBuilder';
-import CollapsibleSection from '../components/screener/CollapsibleSection';
+import CollapsibleSection from '../components/CollapsibleSection';
 import '../components/screener/IndicatorBuilder.css';
 import './ScreenerPage.css';
 

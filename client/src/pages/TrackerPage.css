@@ -1,0 +1,30 @@
+.tracker-page {
+  width: 100%;
+  min-width: 0;
+}
+
+.tracker-header {
+  margin-bottom: 1rem;
+}
+
+.tracker-warn {
+  margin-top: 1rem;
+  margin-bottom: 0;
+}
+
+@media (max-width: 640px) {
+  .tracker-header {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .tracker-header .header-actions {
+    width: 100%;
+    flex-wrap: wrap;
+  }
+
+  .tracker-header .header-actions .btn-secondary {
+    flex: 1;
+    min-width: 120px;
+  }
+}

@@ -35,9 +35,22 @@
 
 .trading-layout {
   display: grid;
-  grid-template-columns: minmax(220px, 260px) minmax(0, 1fr);
+  grid-template-columns: minmax(220px, 300px) minmax(0, 1fr);
   gap: 1.25rem;
   align-items: start;
+}
+
+.trading-sidebar-section {
+  height: fit-content;
+  position: sticky;
+  top: 1rem;
+}
+
+.strategy-header-inset {
+  margin-bottom: 0;
+  padding: 0;
+  background: transparent;
+  border: none;
 }
 
 @media (max-width: 900px) {
@@ -45,8 +58,61 @@
     grid-template-columns: 1fr;
   }
 
-  .strategy-sidebar {
+  .trading-sidebar-section {
     position: static;
+  }
+}
+
+@media (max-width: 640px) {
+  .trading-page .header {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .header-badges {
+    width: 100%;
+  }
+
+  .strategy-header-top {
+    flex-direction: column;
+  }
+
+  .strategy-name-input {
+    width: 100%;
+    min-width: 0;
+  }
+
+  .strategy-actions {
+    width: 100%;
+  }
+
+  .strategy-actions button {
+    flex: 1;
+    min-width: 0;
+  }
+
+  .tab-nav {
+    overflow-x: auto;
+    flex-wrap: nowrap;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .tab-btn {
+    flex-shrink: 0;
+    white-space: nowrap;
+  }
+
+  .kotak-row {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .kotak-row label,
+  .kotak-row input,
+  .kotak-row select,
+  .kotak-row button {
+    width: 100%;
+    min-width: 0;
   }
 }
 
