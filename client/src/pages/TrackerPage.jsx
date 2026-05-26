@@ -97,6 +97,10 @@ export default function TrackerPage() {
     const high300 = premiums300.length ? Math.max(...premiums300) : null;
     const low300 = premiums300.length ? Math.min(...premiums300) : null;
 
+    // 3:00 PM exit (15:00:00)
+    const exitReading300 = readings.find(r => r.time && r.time.startsWith('15:00')) || readings.find(r => r.time && r.time >= '15:00:00');
+    const exitPremium300 = exitReading300 ? exitReading300.straddlePremium : null;
+
     // 9:20 - 3:25 range
     const range325 = readings.filter(
       (r) => r.time && r.time >= '09:20:00' && r.time <= '15:25:00'
@@ -104,6 +108,10 @@ export default function TrackerPage() {
     const premiums325 = range325.map((r) => r.straddlePremium);
     const high325 = premiums325.length ? Math.max(...premiums325) : null;
     const low325 = premiums325.length ? Math.min(...premiums325) : null;
+
+    // 3:20 PM exit (15:20:00)
+    const exitReading320 = readings.find(r => r.time && r.time.startsWith('15:20')) || readings.find(r => r.time && r.time >= '15:20:00');
+    const exitPremium320 = exitReading320 ? exitReading320.straddlePremium : null;
 
     const entryAmount = entryPremium != null ? entryPremium * lotSize : null;
 
@@ -113,12 +121,18 @@ export default function TrackerPage() {
     const maxGain300 = (low300 != null && entryPremium != null)
       ? Math.max(0, entryPremium - low300) * lotSize
       : null;
+    const exitPnL300 = (entryPremium != null && exitPremium300 != null)
+      ? (entryPremium - exitPremium300) * lotSize
+      : null;
 
     const maxLoss325 = (high325 != null && entryPremium != null)
       ? Math.max(0, high325 - entryPremium) * lotSize
       : null;
     const maxGain325 = (low325 != null && entryPremium != null)
       ? Math.max(0, entryPremium - low325) * lotSize
+      : null;
+    const exitPnL320 = (entryPremium != null && exitPremium320 != null)
+      ? (entryPremium - exitPremium320) * lotSize
       : null;
 
     if (!filtered.length) {
@@ -131,10 +145,14 @@ export default function TrackerPage() {
         low300,
         maxLoss300,
         maxGain300,
+        exitPremium300,
+        exitPnL300,
         high325,
         low325,
         maxLoss325,
         maxGain325,
+        exitPremium320,
+        exitPnL320,
       };
     }
     const premiums = filtered.map((r) => r.straddlePremium);
@@ -150,10 +168,14 @@ export default function TrackerPage() {
       low300,
       maxLoss300,
       maxGain300,
+      exitPremium300,
+      exitPnL300,
       high325,
       low325,
       maxLoss325,
       maxGain325,
+      exitPremium320,
+      exitPnL320,
     };
   }, [filtered, readings, stats, symbol]);
 

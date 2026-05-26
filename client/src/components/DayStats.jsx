@@ -63,6 +63,13 @@ export default function DayStats({ stats, symbol, date, anchor }) {
             <Stat label="9:20 - 3:00 Low" value={stats.low300} variant="low" />
             <Stat label="Max Loss (Seller)" value={stats.maxLoss300} isCurrency={true} variant="low" />
             <Stat label="Max Gain (Seller)" value={stats.maxGain300} isCurrency={true} variant="high" />
+            <Stat label="3:00 Exit Premium" value={stats.exitPremium300} />
+            <Stat
+              label="3:00 Exit PnL"
+              value={stats.exitPnL300}
+              isCurrency={true}
+              variant={stats.exitPnL300 != null ? (stats.exitPnL300 >= 0 ? 'high' : 'low') : ''}
+            />
           </div>
         </div>
 
@@ -76,6 +83,13 @@ export default function DayStats({ stats, symbol, date, anchor }) {
             <Stat label="9:20 - 3:25 Low" value={stats.low325} variant="low" />
             <Stat label="Max Loss (Seller)" value={stats.maxLoss325} isCurrency={true} variant="low" />
             <Stat label="Max Gain (Seller)" value={stats.maxGain325} isCurrency={true} variant="high" />
+            <Stat label="3:20 Exit Premium" value={stats.exitPremium320} />
+            <Stat
+              label="3:20 Exit PnL"
+              value={stats.exitPnL320}
+              isCurrency={true}
+              variant={stats.exitPnL320 != null ? (stats.exitPnL320 >= 0 ? 'high' : 'low') : ''}
+            />
           </div>
         </div>
       </div>
