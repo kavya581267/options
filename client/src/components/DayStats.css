@@ -41,6 +41,10 @@
   border-left: 3px solid var(--red);
 }
 
+.stat-card.entry {
+  border-left: 3px solid var(--accent);
+}
+
 .stat-label {
   font-size: 0.75rem;
   color: var(--muted);

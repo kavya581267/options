@@ -112,7 +112,9 @@ export async function listAvailableDates(symbol) {
   }
 }
 
-export function computeDayStats(readings, anchor) {
+export function computeDayStats(readings, anchor, symbol = '') {
+  const lotSize = symbol === 'NIFTY' ? 65 : symbol === 'SENSEX' ? 20 : 1;
+
   if (!readings.length) {
     return {
       anchorSpot: anchor?.spot ?? null,
@@ -120,10 +122,58 @@ export function computeDayStats(readings, anchor) {
       premiumHigh: null,
       premiumLow: null,
       count: 0,
+      entryPremium: null,
+      lotSize,
+      entryAmount: null,
+      high300: null,
+      low300: null,
+      maxLoss300: null,
+      maxGain300: null,
+      high325: null,
+      low325: null,
+      maxLoss325: null,
+      maxGain325: null,
     };
   }
 
   const premiums = readings.map((r) => r.straddlePremium);
+
+  const entryReading = readings.find(
+    (r) => r.time && r.time >= '09:20:00'
+  );
+  const entryPremium = entryReading ? entryReading.straddlePremium : null;
+
+  // 9:20 - 3:00 range
+  const range300 = readings.filter(
+    (r) => r.time && r.time >= '09:20:00' && r.time <= '15:00:00'
+  );
+  const premiums300 = range300.map((r) => r.straddlePremium);
+  const high300 = premiums300.length ? Math.max(...premiums300) : null;
+  const low300 = premiums300.length ? Math.min(...premiums300) : null;
+
+  // 9:20 - 3:25 range
+  const range325 = readings.filter(
+    (r) => r.time && r.time >= '09:20:00' && r.time <= '15:25:00'
+  );
+  const premiums325 = range325.map((r) => r.straddlePremium);
+  const high325 = premiums325.length ? Math.max(...premiums325) : null;
+  const low325 = premiums325.length ? Math.min(...premiums325) : null;
+
+  const entryAmount = entryPremium != null ? entryPremium * lotSize : null;
+
+  const maxLoss300 = (high300 != null && entryPremium != null)
+    ? Math.max(0, high300 - entryPremium) * lotSize
+    : null;
+  const maxGain300 = (low300 != null && entryPremium != null)
+    ? Math.max(0, entryPremium - low300) * lotSize
+    : null;
+
+  const maxLoss325 = (high325 != null && entryPremium != null)
+    ? Math.max(0, high325 - entryPremium) * lotSize
+    : null;
+  const maxGain325 = (low325 != null && entryPremium != null)
+    ? Math.max(0, entryPremium - low325) * lotSize
+    : null;
 
   return {
     anchorSpot: anchor?.spot ?? readings[0]?.spot ?? null,
@@ -131,5 +181,16 @@ export function computeDayStats(readings, anchor) {
     premiumHigh: Math.max(...premiums),
     premiumLow: Math.min(...premiums),
     count: readings.length,
+    entryPremium,
+    lotSize,
+    entryAmount,
+    high300,
+    low300,
+    maxLoss300,
+    maxGain300,
+    high325,
+    low325,
+    maxLoss325,
+    maxGain325,
   };
 }

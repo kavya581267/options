@@ -38,7 +38,7 @@ router.get('/data/:symbol', async (req, res) => {
     const symbol = req.params.symbol.toUpperCase();
     const date = req.query.date || getISTDateString();
     const { anchor, readings } = await readDayData(symbol, date);
-    const stats = computeDayStats(readings, anchor);
+    const stats = computeDayStats(readings, anchor, symbol);
     res.json({ symbol, date, anchor, readings, stats });
   } catch (err) {
     res.status(500).json({ error: err.message });

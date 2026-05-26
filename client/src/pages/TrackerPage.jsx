@@ -82,15 +82,80 @@ export default function TrackerPage() {
   }, [readings, timeFrom, timeTo]);
 
   const filteredStats = useMemo(() => {
-    if (!filtered.length) return stats;
+    const lotSize = symbol === 'NIFTY' ? 65 : symbol === 'SENSEX' ? 20 : 1;
+
+    const entryReading = readings.find(
+      (r) => r.time && r.time >= '09:20:00'
+    );
+    const entryPremium = entryReading ? entryReading.straddlePremium : null;
+
+    // 9:20 - 3:00 range
+    const range300 = readings.filter(
+      (r) => r.time && r.time >= '09:20:00' && r.time <= '15:00:00'
+    );
+    const premiums300 = range300.map((r) => r.straddlePremium);
+    const high300 = premiums300.length ? Math.max(...premiums300) : null;
+    const low300 = premiums300.length ? Math.min(...premiums300) : null;
+
+    // 9:20 - 3:25 range
+    const range325 = readings.filter(
+      (r) => r.time && r.time >= '09:20:00' && r.time <= '15:25:00'
+    );
+    const premiums325 = range325.map((r) => r.straddlePremium);
+    const high325 = premiums325.length ? Math.max(...premiums325) : null;
+    const low325 = premiums325.length ? Math.min(...premiums325) : null;
+
+    const entryAmount = entryPremium != null ? entryPremium * lotSize : null;
+
+    const maxLoss300 = (high300 != null && entryPremium != null)
+      ? Math.max(0, high300 - entryPremium) * lotSize
+      : null;
+    const maxGain300 = (low300 != null && entryPremium != null)
+      ? Math.max(0, entryPremium - low300) * lotSize
+      : null;
+
+    const maxLoss325 = (high325 != null && entryPremium != null)
+      ? Math.max(0, high325 - entryPremium) * lotSize
+      : null;
+    const maxGain325 = (low325 != null && entryPremium != null)
+      ? Math.max(0, entryPremium - low325) * lotSize
+      : null;
+
+    if (!filtered.length) {
+      return {
+        ...stats,
+        entryPremium,
+        lotSize,
+        entryAmount,
+        high300,
+        low300,
+        maxLoss300,
+        maxGain300,
+        high325,
+        low325,
+        maxLoss325,
+        maxGain325,
+      };
+    }
     const premiums = filtered.map((r) => r.straddlePremium);
     return {
       ...stats,
       premiumHigh: Math.max(...premiums),
       premiumLow: Math.min(...premiums),
       count: filtered.length,
+      entryPremium,
+      lotSize,
+      entryAmount,
+      high300,
+      low300,
+      maxLoss300,
+      maxGain300,
+      high325,
+      low325,
+      maxLoss325,
+      maxGain325,
     };
-  }, [filtered, stats]);
+  }, [filtered, readings, stats, symbol]);
 
   const handleManualFetch = async () => {
     setFetching(true);
@@ -116,11 +181,28 @@ export default function TrackerPage() {
   const anchorStrike = anchor?.strike ?? stats?.anchorStrike;
   const anchorSpot = anchor?.spot ?? stats?.anchorSpot;
 
+  const isExpiryDay = useMemo(() => {
+    if (!date) return false;
+    const [yr, mo, dy] = date.split('-').map(Number);
+    const d = new Date(yr, mo - 1, dy);
+    const dayOfWeek = d.getDay();
+    if (symbol === 'NIFTY' && dayOfWeek === 2) return true;
+    if (symbol === 'SENSEX' && dayOfWeek === 4) return true;
+    return false;
+  }, [date, symbol]);
+
   return (
     <div className="tracker-page">
       <header className="header tracker-header">
         <div>
-          <h1>Straddle Tracker</h1>
+          <h1 style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', flexWrap: 'wrap' }}>
+            Straddle Tracker
+            {isExpiryDay && (
+              <span className="badge expiry-badge" style={{ backgroundColor: 'rgba(239, 68, 68, 0.12)', color: 'var(--red)', border: '1px solid rgba(239, 68, 68, 0.3)', fontSize: '0.75rem', padding: '0.15rem 0.5rem', borderRadius: '6px', fontWeight: '600', animation: 'pulse 2s infinite', display: 'inline-flex', alignItems: 'center' }}>
+                ⚡ {symbol} Expiry Day
+              </span>
+            )}
+          </h1>
           <p className="subtitle">
             9:15 spot sets the strike — minute-by-minute straddle premium at that
             strike
